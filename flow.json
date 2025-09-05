@@ -238,31 +238,6 @@
         "h": 242
     },
     {
-        "id": "7bdaf4cb89927b60",
-        "type": "group",
-        "z": "640c6734fdac3595",
-        "name": "",
-        "style": {
-            "stroke": "#ff0000",
-            "fill": "#ffbfbf",
-            "label": true
-        },
-        "nodes": [
-            "01ffc9feb42a01f7",
-            "0f3483727858d393",
-            "1311921afd8b6feb",
-            "10047dbe449cb4b0",
-            "431c288dc98a3155",
-            "a5e565e3042098e8",
-            "b24553a04b159354",
-            "320af7eb35ac1c83"
-        ],
-        "x": 74,
-        "y": 419,
-        "w": 792,
-        "h": 242
-    },
-    {
         "id": "bf24f1109e557024",
         "type": "group",
         "z": "640c6734fdac3595",
@@ -485,7 +460,7 @@
         ],
         "x": 74,
         "y": 679,
-        "w": 912,
+        "w": 972,
         "h": 242
     },
     {
@@ -597,14 +572,14 @@
             "de5e6ed809646311",
             "82779c738ad44c4b",
             "258f6bf27fc6e1cf",
-            "57fe4cea096dc9a9",
             "417fa61902dccc67",
             "dc55c89f0ab0fef9",
             "f3110649b75fa1f6",
             "3e79a8b6fddc2caf",
             "a7081151ab3a2ad4",
             "7f021b2b6bf737d9",
-            "6e94b291e5b12d2d"
+            "6e94b291e5b12d2d",
+            "57fe4cea096dc9a9"
         ],
         "x": 2614,
         "y": 1239,
@@ -669,6 +644,30 @@
         "h": 202
     },
     {
+        "id": "3c7c28232df10c32",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "name": "",
+        "style": {
+            "stroke": "#ff0000",
+            "fill": "#ffbfbf",
+            "label": true
+        },
+        "nodes": [
+            "77971b6e431ea86d",
+            "937c8093b89d17f4",
+            "4dca5a796b2469fc",
+            "9bdb51bc33082cea",
+            "22aacd3219d0cc15",
+            "752553bd54961a67",
+            "f6bf0c6b76b28ba8"
+        ],
+        "x": 74,
+        "y": 439,
+        "w": 692,
+        "h": 222
+    },
+    {
         "id": "f11085f09044723f",
         "type": "group",
         "z": "640c6734fdac3595",
@@ -690,6 +689,34 @@
         "y": 739,
         "w": 452,
         "h": 182
+    },
+    {
+        "id": "fcd977efd26f7784",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "name": "สำหรับ Daily Report",
+        "style": {
+            "stroke": "#ff0000",
+            "fill": "#ffbfbf",
+            "label": false
+        },
+        "nodes": [
+            "44d8975a73fc245d",
+            "28f586b3ce011cd5",
+            "75fd2cfc955d5334",
+            "220c55683d9085e9",
+            "42c8aaf8e1de6b0d",
+            "eeb9ed1385b6ba22",
+            "a248fe30463bd6cc",
+            "ca942ebbfa4b8112",
+            "f5a678cfebc52a6d",
+            "c8779351db8dacf4",
+            "bfe523d9b3554062"
+        ],
+        "x": 1674,
+        "y": 1719,
+        "w": 942,
+        "h": 202
     },
     {
         "id": "e06d098d363668d7",
@@ -808,124 +835,6 @@
         ]
     },
     {
-        "id": "01ffc9feb42a01f7",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "name": "Check Ping and MQTT Then Send Status",
-        "func": "let states = flow.get('deviceStates') || {};\nconst MQTT_TIMEOUT_MS = 25000;\n\nfunction now() { return Date.now(); }\n\nfunction normalizeMac(s) {\n    if (!s) return null;\n    s = String(s).toUpperCase().replace(/[^0-9A-F]/g, '');\n    if (s.length !== 12) return null;\n    return s.match(/.{2}/g).join(':');\n}\n\nconst ipMap = {\n    '192.168.42.30': '94:B9:7E:CE:01:EF'\n};\n\nlet mac = null;\nlet sourceType = null;\n\nif ((msg.topic || '').includes(\"status\")) {\n    sourceType = \"MQTT\";\n    mac = normalizeMac(msg.payload && msg.payload.mac);\n    if (!mac) {\n        const m = /^esp32\\/([^/]+)\\/status$/.exec(msg.topic || '');\n        if (m && m[1]) mac = normalizeMac(m[1]);\n    }\n} else {\n    sourceType = \"Ping\";\n    mac = normalizeMac(ipMap[msg.topic]);\n}\n\nif (!mac) return null;\n\nif (!states[mac]) {\n    states[mac] = {\n        pingOk: false,\n        mqttOk: false,\n        lastCombinedState: 'offline',\n        ping_ms: null,\n        lastMqttTs: 0\n    };\n}\n\nconst oldState = { ...states[mac] };\n\nif (sourceType === \"MQTT\") {\n    const st = (msg.payload && msg.payload.status || '').toString().toLowerCase();\n    // อัปเดต mqttOk ตาม payload\n    states[mac].mqttOk = (st === 'online');\n    // เก็บ timestamp ล่าสุดที่ได้ MQTT สถานะ\n    states[mac].lastMqttTs = now();\n} else {\n    // อัปเดตจาก Ping\n    states[mac].pingOk = (msg.payload !== false);\n    states[mac].ping_ms = (msg.payload !== false) ? Number(msg.payload) : oldState.ping_ms;\n}\n\n// ตรวจสอบ timeout ของ MQTT ทุกครั้งที่มีข้อความเข้ามา\nif (states[mac].lastMqttTs === 0 || (now() - states[mac].lastMqttTs) > MQTT_TIMEOUT_MS) {\n    states[mac].mqttOk = false;\n}\n\nconst deviceState = states[mac];\nconst newCombinedState = (deviceState.pingOk && deviceState.mqttOk) ? 'online' : 'offline';\n\nif (newCombinedState !== oldState.lastCombinedState || deviceState.ping_ms !== oldState.ping_ms) {\n    states[mac].lastCombinedState = newCombinedState;\n    flow.set('deviceStates', states);\n    return { payload: { mac, status: newCombinedState, ping_ms: deviceState.ping_ms } };\n}\n\nreturn null;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 460,
-        "y": 620,
-        "wires": [
-            [
-                "9708f9c81584ae9a",
-                "6889d15e433846c7"
-            ]
-        ]
-    },
-    {
-        "id": "0f3483727858d393",
-        "type": "ping",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "protocol": "Automatic",
-        "mode": "timed",
-        "name": "Ping",
-        "host": "192.168.42.30",
-        "timer": "1",
-        "inputs": 0,
-        "x": 150,
-        "y": 500,
-        "wires": [
-            [
-                "1311921afd8b6feb",
-                "01ffc9feb42a01f7"
-            ]
-        ]
-    },
-    {
-        "id": "1311921afd8b6feb",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "name": "Check Ping and MQTT Then Send Status",
-        "func": "// Get devices context\nlet devices = flow.get('devices') || {};\n\n// Map IP to MAC and Room Name\nconst ipMap = {\n  '192.168.42.30': { mac: '94:B9:7E:CE:01:EF', room: 'Server Room 1' }\n};\n\nconst ip = msg.topic;\nif (!ipMap[ip]) return null;\n\nconst mac = ipMap[ip].mac;\nconst room = ipMap[ip].room;\nconst now = Date.now();\n\nlet device = devices[mac] || { status: null, lastCheck: 0, room: room };\n\nconst newStatus = (msg.payload === false) ? 'offline' : 'online';\n\nif (newStatus !== device.status) {\n    device.status = newStatus;\n    device.lastCheck = now;\n    devices[mac] = device;\n    flow.set('devices', devices);\n    return {\n        payload: {\n            mac: mac,\n            room: room,\n            status: newStatus,\n            event_time: new Date().toISOString()\n        }\n    };\n}\n\ndevice.lastCheck = now;\ndevices[mac] = device;\nflow.set('devices', devices);\nreturn null;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 560,
-        "y": 500,
-        "wires": [
-            [
-                "10047dbe449cb4b0"
-            ]
-        ]
-    },
-    {
-        "id": "10047dbe449cb4b0",
-        "type": "switch",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "name": "Status Switch",
-        "property": "payload.status",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "online",
-                "vt": "str"
-            },
-            {
-                "t": "eq",
-                "v": "offline",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 420,
-        "y": 560,
-        "wires": [
-            [
-                "431c288dc98a3155"
-            ],
-            [
-                "431c288dc98a3155"
-            ]
-        ]
-    },
-    {
-        "id": "431c288dc98a3155",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "name": "Insert to DB",
-        "func": "function toLocalSqlDate(d) {\n  d = d || new Date();\n  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);\n  return local.toISOString().slice(0,19).replace('T',' ');\n}\nlet data = msg.payload;\nlet time = data.event_time\n  ? toLocalSqlDate(new Date(data.event_time))\n  : toLocalSqlDate();\n\nmsg.topic = `\n  INSERT INTO esp_status_log\n    (mac, room, status, time)\n  VALUES\n    (\n      '${data.mac}',\n      '${data.room.replace(/'/g,\"''\")}',\n      '${data.status}',\n      '${time}'\n    );\n`.replace(/\\s+/g,' ');\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 590,
-        "y": 560,
-        "wires": [
-            [
-                "a5e565e3042098e8"
-            ]
-        ]
-    },
-    {
         "id": "d266684b84baf6ee",
         "type": "mysql",
         "z": "640c6734fdac3595",
@@ -960,19 +869,6 @@
         ]
     },
     {
-        "id": "a5e565e3042098e8",
-        "type": "mysql",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "mydb": "5e560f07cfec117a",
-        "name": "esp_status_log",
-        "x": 760,
-        "y": 560,
-        "wires": [
-            []
-        ]
-    },
-    {
         "id": "5848de06518173ba",
         "type": "mqtt in",
         "z": "640c6734fdac3595",
@@ -990,28 +886,6 @@
         "wires": [
             [
                 "874c0c450dd51575"
-            ]
-        ]
-    },
-    {
-        "id": "b24553a04b159354",
-        "type": "mqtt in",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "name": "Check MQTT",
-        "topic": "esp32/status",
-        "qos": "2",
-        "datatype": "json",
-        "broker": "8301192ec347dbc9",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 190,
-        "y": 620,
-        "wires": [
-            [
-                "01ffc9feb42a01f7"
             ]
         ]
     },
@@ -1080,7 +954,7 @@
         "g": "ba826875d50440fd",
         "name": "Every 1 sec",
         "props": [],
-        "repeat": "60",
+        "repeat": "1",
         "crontab": "",
         "once": true,
         "onceDelay": "5",
@@ -1634,7 +1508,7 @@
         "z": "640c6734fdac3595",
         "g": "b4a00978e789863d",
         "name": "Query for uptime",
-        "func": "// REPLACE ALL: Build SQL (Uptime History) — auto-detect ISO vs Local & strict validation\n\n// -- helpers --\nfunction normMAC(s) {\n    if (!s) return null;\n    const hex = String(s).toUpperCase().replace(/[^0-9A-F]/g, '');\n    if (hex.length !== 12) return null;\n    return hex.match(/.{2}/g).join(':');\n}\n\n// รับได้ทั้ง ISO (UTC) หรือ 'YYYY-MM-DD HH:MM:SS' (local) แล้วคืนเป็น DATETIME local สำหรับ MySQL\nfunction toSqlAuto(s) {\n    if (!s) return null;\n    const v = String(s).trim();\n\n    // case A: ISO (มี 'T')\n    if (v.includes('T')) {\n        const d = new Date(v);\n        if (isNaN(d)) return null;\n        // แปลง UTC -> Local DATETIME (ตรงกับเวลาที่ DB เก็บเป็นเวลาไทย)\n        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);\n        return local.toISOString().slice(0, 19).replace('T', ' ');\n    }\n\n    // case B: เป็น local DATETIME อยู่แล้ว\n    if (/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/.test(v)) return v;\n\n    return null;\n}\n\n// 1) Read query params\nconst q = msg.req?.query || {};\nlet { start, end, mac } = q;\n\n// 1.1) end=now → ใช้เวลาปัจจุบัน (ISO)\nif (end === 'now') end = new Date().toISOString();\n\n// 1.2) normalize MAC\nconst macNorm = normMAC(mac);\n\n// 2) Validate พารามิเตอร์ขั้นต่ำ\nif (!macNorm || !start || !end) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Missing or invalid query parameters: mac, start, end\" };\n    return msg;\n}\n\n// 3) แปลงเวลาเป็นรูปแบบ DATETIME (Local) ให้ตรงกับคอลัมน์ time ใน DB\nconst startSql = toSqlAuto(start);\nconst endSql = toSqlAuto(end);\n\nif (!startSql || !endSql) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Invalid datetime format. Use ISO-8601 or 'YYYY-MM-DD HH:MM:SS' (local).\" };\n    return msg;\n}\n\n// 3.1) ตรวจช่วงเวลาให้ start < end (ใช้ค่า original ที่ parse ได้เสมอ)\nconst startMs = Date.parse(start);\nconst endMs = Date.parse(end);\nif (!(Number.isFinite(startMs) && Number.isFinite(endMs)) || endMs <= startMs) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Invalid time range. Ensure start < end.\" };\n    return msg;\n}\n\n// 4) SQL: ข้อมูลในช่วง + แถวล่าสุดก่อน start\nconst sql = `\n(\n  SELECT status, time\n  FROM esp_status_log\n  WHERE mac = ? AND time >= ? AND time <= ?\n)\nUNION ALL\n(\n  SELECT status, time FROM (\n    SELECT status, time\n    FROM esp_status_log\n    WHERE mac = ? AND time < ?\n    ORDER BY time DESC\n    LIMIT 1\n  ) AS prev_status\n)\nORDER BY time ASC;\n`;\n\n// 5) Bind params\nmsg.topic = sql;\nmsg.payload = [macNorm, startSql, endSql, macNorm, startSql];\n\n// แนบข้อมูลไว้ใช้ต่อ\nmsg.timeRange = { start: startSql, end: endSql };\nmsg.mac = macNorm;\n\nreturn msg;\n",
+        "func": "// REPLACE ALL: Build SQL (Uptime History) — stable ordering + strict validation\n\nfunction normMAC(s) {\n    if (!s) return null;\n    const hex = String(s).toUpperCase().replace(/[^0-9A-F]/g, '');\n    if (hex.length !== 12) return null;\n    return hex.match(/.{2}/g).join(':');\n}\n\n// รับ ISO (UTC) หรือ 'YYYY-MM-DD HH:MM:SS' (local) คืนเป็น DATETIME local (ให้ตรงกับ DB)\nfunction toSqlAuto(s) {\n    if (!s) return null;\n    const v = String(s).trim();\n    if (v.includes('T')) {\n        const d = new Date(v);\n        if (isNaN(d)) return null;\n        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);\n        return local.toISOString().slice(0, 19).replace('T', ' ');\n    }\n    if (/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/.test(v)) return v;\n    return null;\n}\n\n// 1) params\nconst q = msg.req?.query || {};\nlet { start, end, mac } = q;\nif (end === 'now') end = new Date().toISOString();\n\nconst macNorm = normMAC(mac);\nif (!macNorm || !start || !end) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Missing or invalid query parameters: mac, start, end\" };\n    return msg;\n}\n\nconst startSql = toSqlAuto(start);\nconst endSql = toSqlAuto(end);\nif (!startSql || !endSql) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Invalid datetime format. Use ISO-8601 or 'YYYY-MM-DD HH:MM:SS' (local).\" };\n    return msg;\n}\n\nconst startMs = Date.parse(start);\nconst endMs = Date.parse(end);\nif (!(Number.isFinite(startMs) && Number.isFinite(endMs)) || endMs <= startMs) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"Invalid time range. Ensure start < end.\" };\n    return msg;\n}\n\n// 2) SQL: รวมข้อมูลในช่วง + แถวล่าสุดก่อน start (stable order)\nconst sql = `\n(\n  SELECT id, status, time\n  FROM esp_status_log\n  WHERE mac = ? AND time >= ? AND time <= ?\n)\nUNION ALL\n(\n  SELECT id, status, time FROM (\n    SELECT id, status, time\n    FROM esp_status_log\n    WHERE mac = ? AND time < ?\n    ORDER BY time DESC, id DESC\n    LIMIT 1\n  ) AS prev_status\n)\nORDER BY time ASC, id ASC;\n`;\n\nmsg.topic = sql;\nmsg.payload = [macNorm, startSql, endSql, macNorm, startSql];\nmsg.timeRange = { start: startSql, end: endSql };\nmsg.mac = macNorm;\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1670,7 +1544,7 @@
         "z": "640c6734fdac3595",
         "g": "b4a00978e789863d",
         "name": "Send data",
-        "func": "// ====== Inputs ======\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nconst { start, end } = msg.timeRange || {};\nconst mac = msg.mac;\n\n// ====== Guard: Validate Time Range ======\nconst startMs = new Date(start).getTime();\nconst endMs = new Date(end).getTime();\nif (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {\n    msg.payload = { uptime_pct: 0, segments: [], note: \"invalid time range\" };\n    return msg;\n}\n\n// ====== Get Live Status (for UI display only) ======\nconst states = flow.get('deviceStates') || {};\nconst live = states?.[mac] || null;\nconst liveState = live?.lastCombinedState || null;\nconst livePingMs = Number.isFinite(live?.ping_ms) ? live.ping_ms : null;\n\n// ====== Sort DB Rows ======\nconst list = rows\n    .map(r => ({ status: String(r.status || '').toLowerCase(), ts: new Date(r.time).getTime() }))\n    .filter(r => Number.isFinite(r.ts))\n    .sort((a, b) => a.ts - b.ts);\n\n// ====== Handle Case: No Historical Data ======\nif (list.length === 0) {\n    // If no DB data, we have to guess based on live status, but label it as such.\n    const seg = {\n        status: liveState || 'offline',\n        startTime: new Date(startMs).toISOString(),\n        endTime: new Date(endMs).toISOString()\n    };\n    const onlineSec = (seg.status === 'online') ? (endMs - startMs) / 1000 : 0;\n    const totalSec = (endMs - startMs) / 1000;\n    msg.payload = {\n        uptime_pct: totalSec > 0 ? +(onlineSec / totalSec * 100).toFixed(2) : 0,\n        segments: [seg],\n        authority: 'no_data',\n        live: { state: liveState, ping_ms: livePingMs }\n    };\n    return msg;\n}\n\n// ====== New Uptime Calculation Logic ======\nconst segments = [];\nlet onlineMs = 0;\n\n// 1. Determine the initial state at the exact start of the window.\nlet cursor_ts = startMs;\nlet last_status = 'offline'; // Default to offline if no data precedes the window.\n\nconst pointsBefore = list.filter(p => p.ts < startMs);\nif (pointsBefore.length > 0) {\n    // Find the status from the very last data point before the window started.\n    last_status = pointsBefore[pointsBefore.length - 1].status;\n}\n\n// 2. Iterate through all points to build segments.\nfor (const point of list) {\n    // Skip points that are before our window starts. Their status is already captured in last_status.\n    if (point.ts <= cursor_ts) {\n        continue;\n    }\n\n    // The segment ends either at the new point's time or the window's end time, whichever is first.\n    const seg_end = Math.min(point.ts, endMs);\n\n    // If the segment has a duration, add it.\n    if (seg_end > cursor_ts) {\n         segments.push({\n            status: last_status,\n            startTime: new Date(cursor_ts).toISOString(),\n            endTime: new Date(seg_end).toISOString()\n        });\n        if (last_status === 'online') {\n            onlineMs += (seg_end - cursor_ts);\n        }\n    }\n\n    // Update cursor and status for the next iteration.\n    cursor_ts = point.ts;\n    last_status = point.status;\n\n    // If our cursor has already passed the window's end, we can stop.\n    if (cursor_ts >= endMs) {\n        break;\n    }\n}\n\n// 3. After the loop, if the last data point was before the window's end,\n// fill the remaining time with the last known status.\nif (cursor_ts < endMs) {\n    segments.push({\n        status: last_status,\n        startTime: new Date(cursor_ts).toISOString(),\n        endTime: new Date(endMs).toISOString()\n    });\n    if (last_status === 'online') {\n        onlineMs += (endMs - cursor_ts);\n    }\n}\n\n// ====== Final Calculation & Output ======\nconst totalMs = endMs - startMs;\nconst uptimePct = totalMs > 0 ? +(onlineMs / totalMs * 100).toFixed(2) : 0;\n\nmsg.payload = {\n    uptime_pct: uptimePct,\n    segments: segments,\n    authority: 'db_only', // Indicate that this data is based purely on the database log\n    live: { state: liveState, ping_ms: livePingMs }\n};\n\nreturn msg;",
+        "func": "// ====== Inputs ======\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nconst { start, end } = msg.timeRange || {};\nconst mac = msg.mac;\n\n// ====== Guard: Validate Time Range ======\nconst startMs = new Date(start).getTime();\nconst endMs = new Date(end).getTime();\nif (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {\n    msg.payload = { uptime_pct: 0, segments: [], note: \"invalid time range\" };\n    return msg;\n}\n\n// ====== Get Live Status (for UI display only) ======\nconst states = flow.get('deviceStates') || {};\nconst live = states?.[mac] || null;\nconst liveState = live?.lastCombinedState || null;\nconst livePingMs = Number.isFinite(live?.ping_ms) ? live.ping_ms : null;\n\n// ✨ FIX: Sort by timestamp first, then by database ID to handle \"flapping\" status correctly ✨\nconst list = rows\n    .map(r => ({ id: r.id, status: String(r.status || '').toLowerCase(), ts: new Date(r.time).getTime() }))\n    .filter(r => Number.isFinite(r.ts) && r.id)\n    .sort((a, b) => {\n        if (a.ts !== b.ts) {\n            return a.ts - b.ts;\n        }\n        return a.id - b.id; // Secondary sort by ID ensures correct order for same-timestamp events\n    });\n\n// ====== Handle Case: No Historical Data ======\nif (list.length === 0) {\n    const seg = {\n        status: liveState || 'offline',\n        startTime: new Date(startMs).toISOString(),\n        endTime: new Date(endMs).toISOString()\n    };\n    const onlineSec = (seg.status === 'online') ? (endMs - startMs) / 1000 : 0;\n    const totalSec = (endMs - startMs) / 1000;\n    msg.payload = {\n        uptime_pct: totalSec > 0 ? +(onlineSec / totalSec * 100).toFixed(2) : 0,\n        segments: [seg],\n        authority: 'no_data',\n        live: { state: liveState, ping_ms: livePingMs }\n    };\n    return msg;\n}\n\n// ====== New Uptime Calculation Logic ======\nconst segments = [];\nlet onlineMs = 0;\n\nlet cursor_ts = startMs;\nlet last_status = 'offline'; \n\nconst pointsBefore = list.filter(p => p.ts < startMs);\nif (pointsBefore.length > 0) {\n    last_status = pointsBefore[pointsBefore.length - 1].status;\n}\n\nfor (const point of list) {\n    // This condition is important for correctly establishing the state at the beginning of the window,\n    // especially when multiple events happen before the window starts.\n    if (point.ts < cursor_ts) {\n        last_status = point.status; // Update status for points before the window starts\n        continue;\n    }\n\n    const seg_end = Math.min(point.ts, endMs);\n\n    if (seg_end > cursor_ts) {\n         segments.push({\n            status: last_status,\n            startTime: new Date(cursor_ts).toISOString(),\n            endTime: new Date(seg_end).toISOString()\n        });\n        if (last_status === 'online') {\n            onlineMs += (seg_end - cursor_ts);\n        }\n    }\n\n    cursor_ts = point.ts;\n    last_status = point.status;\n\n    if (cursor_ts >= endMs) {\n        break;\n    }\n}\n\nif (cursor_ts < endMs) {\n    segments.push({\n        status: last_status,\n        startTime: new Date(cursor_ts).toISOString(),\n        endTime: new Date(endMs).toISOString()\n    });\n    if (last_status === 'online') {\n        onlineMs += (endMs - cursor_ts);\n    }\n}\n\n// ====== Final Calculation & Output ======\nconst totalMs = endMs - startMs;\nconst uptimePct = totalMs > 0 ? +(onlineMs / totalMs * 100).toFixed(2) : 0;\n\nmsg.payload = {\n    uptime_pct: uptimePct,\n    segments: segments,\n    authority: 'db_only', \n    live: { state: liveState, ping_ms: livePingMs }\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1762,7 +1636,7 @@
         "z": "640c6734fdac3595",
         "g": "c7e3510948f6624e",
         "name": "Check condition",
-        "func": "// Function: eval_alert_v6.2 (Passes rule thresholds to output)\n\n// --- CONTEXTS ---\nvar states = flow.get('alert_states') || {};\nvar rules = global.get('effectiveRuleMap') || {};\nvar deviceMap = flow.get('device_map', 'file') || {};\nvar now = new Date();\nvar now_iso = now.toISOString();\n\nfunction getLocalSqlTimestamp() {\n    const d = new Date();\n    const tzOffset = d.getTimezoneOffset() * 60000;\n    const localTime = new Date(d.getTime() - tzOffset);\n    return localTime.toISOString().slice(0, 19).replace('T', ' ');\n}\nvar now_sql = getLocalSqlTimestamp();\n\n// --- INPUT PAYLOAD ---\nvar p = msg.payload;\nif (!p || !p.mac || !p.sensor_name || !p.metric || p.value === undefined) {\n    node.error(\"Invalid payload\", msg);\n    return null;\n}\n\nvar mac = p.mac;\nvar sensor = p.sensor_name;\nvar metric = p.metric;\nvar value = Number(p.value);\nvar dedup_key = `${mac}|${sensor}|${metric}`;\n\n// --- HELPERS ---\nfunction getEffectiveRule(mac, sensor, metric) {\n    var sensorKey = `${mac}|${sensor}|${metric}`;\n    if (rules[sensorKey]) return rules[sensorKey];\n    var overallKey = `${mac}|overall|${metric}`;\n    if (rules[overallKey]) return rules[overallKey];\n    return rules[`system_${metric}`] || {};\n}\nfunction numOrNull(x) {\n    return (x === undefined || x === null || x === '') ? null : Number(x);\n}\nfunction determineRawLevel(value, rule) {\n    var crit_max = numOrNull(rule.crit_max);\n    var crit_min = numOrNull(rule.crit_min);\n    var warn_max = numOrNull(rule.warn_max);\n    var warn_min = numOrNull(rule.warn_min);\n    if (crit_max !== null && value > crit_max) return 'critical';\n    if (crit_min !== null && value < crit_min) return 'critical';\n    if (warn_max !== null && value > warn_max) return 'warning';\n    if (warn_min !== null && value < warn_min) return 'warning';\n    return 'normal';\n}\nfunction uuidv4() {\n    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {\n        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);\n        return v.toString(16);\n    });\n}\nfunction getRoomName(mac) {\n    for (const key in deviceMap) {\n        if (key.startsWith('room') && deviceMap[key] === mac) {\n            const roomLetter = key.slice(-1).toUpperCase();\n            return deviceMap[`name${roomLetter}`] || mac;\n        }\n    }\n    return mac;\n}\n\nvar rule = getEffectiveRule(mac, sensor, metric);\nif (!rule.id) {\n    return null;\n}\n\n\nrule.warn_open_consec = rule.warn_open_consec ?? 2;\nrule.crit_open_consec = rule.crit_open_consec ?? 1;\nrule.clear_consec = rule.clear_consec ?? 2;\n\nvar state = states[dedup_key] || {\n    status: 'closed',\n    level: 'normal',\n    warn_count: 0,\n    crit_count: 0,\n    clear_count: 0,\n    event_id: null,\n};\n\n\nvar rawLevel = determineRawLevel(value, rule);\n\nif (rawLevel === 'normal') {\n    state.clear_count++;\n    state.warn_count = 0;\n    state.crit_count = 0;\n} else if (rawLevel === 'warning') {\n    state.warn_count++;\n    state.crit_count = 0;\n    state.clear_count = 0;\n} else {\n    state.crit_count++;\n    state.warn_count = 0;\n    state.clear_count = 0;\n}\n\nvar outputs = [null, null, null];\nvar room = getRoomName(mac);\n\n// A) RECOVERY: Close an existing open or acknowledged incident\nif ((state.status === 'open' || state.status === 'ack') && rawLevel === 'normal' && state.clear_count >= rule.clear_consec) {\n    const eventToClose = state.event_id;\n    const originalStatus = state.status;\n    const finalLevel = state.level;\n\n    state.status = 'recovery';\n    state.level = 'normal';\n\n    let updateSql;\n    let updatePayload;\n    let logNote = 'System Recovery';\n\n    if (originalStatus === 'ack') {\n        logNote = 'System Recovery (post-ack)';\n        updateSql = `\n            UPDATE \\`alert_events\\` \n            SET \\`status\\`='recovery', \\`closed_at\\`=?\n            WHERE \\`event_id\\`=? AND \\`status\\` = 'ack';\n        `;\n        updatePayload = [now_sql, eventToClose];\n    } else { // originalStatus must be 'open'\n        updateSql = `\n            UPDATE \\`alert_events\\` \n            SET \\`status\\`='recovery', \\`closed_at\\`=?, \\`ack_by\\`='system', \\`ack_note\\`=?\n            WHERE \\`event_id\\`=? AND \\`status\\` = 'open';\n        `;\n        updatePayload = [now_sql, logNote, eventToClose];\n    }\n\n    const logSql = `\n        INSERT INTO \\`alert_event_log\\` (\\`event_id\\`, \\`action\\`, \\`level\\`, \\`value\\`, \\`actor\\`, \\`ts\\`, \\`note\\`, \\`mac\\`, \\`sensor_name\\`, \\`metric\\`) \n        VALUES (?, 'close', ?, ?, 'system', ?, ?, ?, ?, ?);\n    `;\n    const logPayload = [eventToClose, finalLevel, value, now_sql, logNote, mac, sensor, metric];\n\n    outputs[0] = {\n        topic: updateSql + logSql,\n        payload: [...updatePayload, ...logPayload]\n    };\n\n    // Pass essential info for notification\n    outputs[2] = {\n        payload: {\n            type: 'recovery',\n            event_id: eventToClose,\n            dedup_key: dedup_key,\n            mac,\n            sensor_name: sensor,\n            metric,\n            value: value,\n            ts: now_iso,\n            status: 'recovery',\n            room_name: room // <-- Pass room name\n        }\n    };\n}\n\n// B) OPEN NEW INCIDENT: Always a new row\nelse if (state.status === 'closed' && rawLevel !== 'normal') {\n    var newLevel = null;\n    if (rawLevel === 'critical' && state.crit_count >= rule.crit_open_consec) newLevel = 'critical';\n    else if (rawLevel === 'warning' && state.warn_count >= rule.warn_open_consec) newLevel = 'warning';\n\n    if (newLevel) {\n        state.status = 'open';\n        state.level = newLevel;\n        state.event_id = uuidv4();\n\n        outputs[0] = {\n            topic: `\n                INSERT INTO \\`alert_events\\` \n                    (\\`event_id\\`, \\`dedup_key\\`, \\`mac\\`, \\`room_name\\`, \\`sensor_name\\`, \\`metric\\`, \\`level\\`, \\`trigger_value\\`, \\`status\\`, \\`rule_id\\`, \\`opened_at\\`) \n                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?);\n                \n                INSERT INTO \\`alert_event_log\\` \n                    (\\`event_id\\`, \\`action\\`, \\`level\\`, \\`value\\`, \\`actor\\`, \\`ts\\`, \\`mac\\`, \\`sensor_name\\`, \\`metric\\`) \n                VALUES (?, 'open', ?, ?, 'system', ?, ?, ?, ?);\n            `,\n            payload: [\n                state.event_id, dedup_key, mac, room, sensor, metric, newLevel, value, rule.id, now_sql,\n                state.event_id, newLevel, value, now_sql, mac, sensor, metric\n            ]\n        };\n        // Pass essential info for notification\n        outputs[1] = {\n            payload: {\n                type: 'open',\n                level: newLevel,\n                event_id: state.event_id,\n                dedup_key: dedup_key,\n                mac,\n                sensor_name: sensor,\n                metric,\n                value,\n                ts: now_iso,\n                room_name: room, // <-- ADDED\n                warn_min: rule.warn_min, // <-- ADDED\n                warn_max: rule.warn_max  // <-- ADDED\n            }\n        };\n    }\n}\n\n// C) UPDATE EXISTING OPEN INCIDENT (Upgrade or Heartbeat)\nelse if (state.status === 'open' && rawLevel !== 'normal') {\n    const eventToUpdate = state.event_id;\n    if (state.level === 'warning' && rawLevel === 'critical' && state.crit_count >= rule.crit_open_consec) {\n        state.level = 'critical';\n        outputs[0] = {\n            topic: `\n                UPDATE \\`alert_events\\` \n                SET \\`level\\`='critical', \\`trigger_value\\`=?, \\`room_name\\`=? \n                WHERE \\`event_id\\`=?;\n                \n                INSERT INTO \\`alert_event_log\\` (\\`event_id\\`, \\`action\\`, \\`level\\`, \\`value\\`, \\`actor\\`, \\`ts\\`, \\`mac\\`, \\`sensor_name\\`, \\`metric\\`) \n                VALUES (?, 'upgrade', 'critical', ?, 'system', ?, ?, ?, ?);\n            `,\n            payload: [\n                value, room, eventToUpdate,\n                eventToUpdate, value, now_sql, mac, sensor, metric\n            ]\n        };\n        // Pass essential info for notification\n        outputs[1] = {\n            payload: {\n                type: 'upgrade',\n                level: 'critical',\n                event_id: eventToUpdate,\n                dedup_key: dedup_key,\n                mac,\n                sensor_name: sensor,\n                metric,\n                value,\n                ts: now_iso,\n                room_name: room, // <-- ADDED\n                warn_min: rule.warn_min, // <-- ADDED\n                warn_max: rule.warn_max  // <-- ADDED\n            }\n        };\n    } else {\n        node.warn({\n            message: \"❤️ Condition remains ABNORMAL. Sending heartbeat.\",\n            dedup_key: dedup_key,\n            event_id: state.event_id,\n            current_level: state.level\n        });\n        // Just a heartbeat update\n        outputs[0] = {\n            topic: `UPDATE \\`alert_events\\` SET \\`last_updated\\`=? WHERE \\`event_id\\`=?;`,\n            payload: [now_sql, eventToUpdate]\n        };\n    }\n}\n\nstates[dedup_key] = state;\nflow.set('alert_states', states);\n\nif (outputs.some(o => o !== null)) {\n    return outputs;\n}\nreturn null;",
+        "func": "// Function: eval_alert_v6.2 (Passes rule thresholds to output)\n\n// --- CONTEXTS ---\nvar states = flow.get('alert_states') || {};\nvar rules = global.get('effectiveRuleMap') || {};\nvar deviceMap = flow.get('device_map', 'file') || {};\nvar now = new Date();\nvar now_iso = now.toISOString();\n\nfunction getLocalSqlTimestamp() {\n    const d = new Date();\n    const tzOffset = d.getTimezoneOffset() * 60000;\n    const localTime = new Date(d.getTime() - tzOffset);\n    return localTime.toISOString().slice(0, 19).replace('T', ' ');\n}\nvar now_sql = getLocalSqlTimestamp();\n\n// --- INPUT PAYLOAD ---\nvar p = msg.payload;\nif (!p || !p.mac || !p.sensor_name || !p.metric || p.value === undefined) {\n    node.error(\"Invalid payload\", msg);\n    return null;\n}\n\nvar mac = p.mac;\nvar sensor = p.sensor_name;\nvar metric = p.metric;\nvar value = Number(p.value);\nvar dedup_key = `${mac}|${sensor}|${metric}`;\n\n// --- HELPERS ---\nfunction getEffectiveRule(mac, sensor, metric) {\n    var sensorKey = `${mac}|${sensor}|${metric}`;\n    if (rules[sensorKey]) return rules[sensorKey];\n    var overallKey = `${mac}|overall|${metric}`;\n    if (rules[overallKey]) return rules[overallKey];\n    return rules[`system_${metric}`] || {};\n}\nfunction numOrNull(x) {\n    return (x === undefined || x === null || x === '') ? null : Number(x);\n}\nfunction determineRawLevel(value, rule) {\n    var crit_max = numOrNull(rule.crit_max);\n    var crit_min = numOrNull(rule.crit_min);\n    var warn_max = numOrNull(rule.warn_max);\n    var warn_min = numOrNull(rule.warn_min);\n    if (crit_max !== null && value > crit_max) return 'critical';\n    if (crit_min !== null && value < crit_min) return 'critical';\n    if (warn_max !== null && value > warn_max) return 'warning';\n    if (warn_min !== null && value < warn_min) return 'warning';\n    return 'normal';\n}\nfunction uuidv4() {\n    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {\n        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);\n        return v.toString(16);\n    });\n}\nfunction getRoomName(mac) {\n    for (const key in deviceMap) {\n        if (key.startsWith('room') && deviceMap[key] === mac) {\n            const roomLetter = key.slice(-1).toUpperCase();\n            return deviceMap[`name${roomLetter}`] || mac;\n        }\n    }\n    return mac;\n}\n\nvar rule = getEffectiveRule(mac, sensor, metric);\nif (!rule.id) {\n    return null;\n}\n\n\nrule.warn_open_consec = rule.warn_open_consec ?? 2;\nrule.crit_open_consec = rule.crit_open_consec ?? 1;\nrule.clear_consec = rule.clear_consec ?? 2;\n\nvar state = states[dedup_key] || {\n    status: 'closed',\n    level: 'normal',\n    warn_count: 0,\n    crit_count: 0,\n    clear_count: 0,\n    event_id: null,\n};\n\n\nvar rawLevel = determineRawLevel(value, rule);\n\nif (rawLevel === 'normal') {\n    state.clear_count++;\n    state.warn_count = 0;\n    state.crit_count = 0;\n} else if (rawLevel === 'warning') {\n    state.warn_count++;\n    state.crit_count = 0;\n    state.clear_count = 0;\n} else {\n    state.crit_count++;\n    state.warn_count = 0;\n    state.clear_count = 0;\n}\n\nvar outputs = [null, null, null];\nvar room = getRoomName(mac);\n\n// A) RECOVERY: Close an existing open or acknowledged incident\nif ((state.status === 'open' || state.status === 'ack') && rawLevel === 'normal' && state.clear_count >= rule.clear_consec) {\n    const eventToClose = state.event_id;\n    const originalStatus = state.status;\n    const finalLevel = state.level;\n\n    state.status = 'recovery';\n    state.level = 'normal';\n\n    let updateSql;\n    let updatePayload;\n    let logNote = 'System Recovery';\n\n    if (originalStatus === 'ack') {\n        logNote = 'System Recovery (post-ack)';\n        updateSql = `\n            UPDATE \\`alert_events\\` \n            SET \\`status\\`='recovery', \\`closed_at\\`=?\n            WHERE \\`event_id\\`=? AND \\`status\\` = 'ack';\n        `;\n        updatePayload = [now_sql, eventToClose];\n    } else { // originalStatus must be 'open'\n        updateSql = `\n            UPDATE \\`alert_events\\` \n            SET \\`status\\`='recovery', \\`closed_at\\`=?, \\`ack_by\\`='System', \\`ack_note\\`=?\n            WHERE \\`event_id\\`=? AND \\`status\\` = 'open';\n        `; // ✨ จุดที่ 1\n        updatePayload = [now_sql, logNote, eventToClose];\n    }\n\n    const logSql = `\n        INSERT INTO \\`alert_event_log\\` (\\`event_id\\`, \\`action\\`, \\`level\\`, \\`value\\`, \\`actor\\`, \\`ts\\`, \\`note\\`, \\`mac\\`, \\`sensor_name\\`, \\`metric\\`) \n        VALUES (?, 'close', ?, ?, 'System', ?, ?, ?, ?, ?);\n    `; // ✨ จุดที่ 2\n    const logPayload = [eventToClose, finalLevel, value, now_sql, logNote, mac, sensor, metric];\n\n    outputs[0] = {\n        topic: updateSql + logSql,\n        payload: [...updatePayload, ...logPayload]\n    };\n\n    // Pass essential info for notification\n    outputs[2] = {\n        payload: {\n            type: 'recovery',\n            event_id: eventToClose,\n            dedup_key: dedup_key,\n            mac,\n            sensor_name: sensor,\n            metric,\n            value: value,\n            ts: now_iso,\n            status: 'recovery',\n            room_name: room // <-- Pass room name\n        }\n    };\n}\n\n// B) OPEN NEW INCIDENT: Always a new row\nelse if (state.status === 'closed' && rawLevel !== 'normal') {\n    var newLevel = null;\n    if (rawLevel === 'critical' && state.crit_count >= rule.crit_open_consec) newLevel = 'critical';\n    else if (rawLevel === 'warning' && state.warn_count >= rule.warn_open_consec) newLevel = 'warning';\n\n    if (newLevel) {\n        state.status = 'open';\n        state.level = newLevel;\n        state.event_id = uuidv4();\n\n        outputs[0] = {\n            topic: `\n                INSERT INTO \\`alert_events\\` \n                    (\\`event_id\\`, \\`dedup_key\\`, \\`mac\\`, \\`room_name\\`, \\`sensor_name\\`, \\`metric\\`, \\`level\\`, \\`trigger_value\\`, \\`status\\`, \\`rule_id\\`, \\`opened_at\\`) \n                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?);\n                \n                INSERT INTO \\`alert_event_log\\` \n                    (\\`event_id\\`, \\`action\\`, \\`level\\`, \\`value\\`, \\`actor\\`, \\`ts\\`, \\`mac\\`, \\`sensor_name\\`, \\`metric\\`) \n                VALUES (?, 'open', ?, ?, 'System', ?, ?, ?, ?);\n            `, // ✨ จุดที่ 3\n            payload: [\n                state.event_id, dedup_key, mac, room, sensor, metric, newLevel, value, rule.id, now_sql,\n                state.event_id, newLevel, value, now_sql, mac, sensor, metric\n            ]\n        };\n        // Pass essential info for notification\n        outputs[1] = {\n            payload: {\n                type: 'open',\n                level: newLevel,\n                event_id: state.event_id,\n                dedup_key: dedup_key,\n                mac,\n                sensor_name: sensor,\n                metric,\n                value,\n                ts: now_iso,\n                room_name: room, // <-- ADDED\n                warn_min: rule.warn_min, // <-- ADDED\n                warn_max: rule.warn_max  // <-- ADDED\n            }\n        };\n    }\n}\n\n// C) UPDATE EXISTING OPEN INCIDENT (Upgrade or Heartbeat)\nelse if (state.status === 'open' && rawLevel !== 'normal') {\n    const eventToUpdate = state.event_id;\n    if (state.level === 'warning' && rawLevel === 'critical' && state.crit_count >= rule.crit_open_consec) {\n        state.level = 'critical';\n        outputs[0] = {\n            topic: `\n                UPDATE \\`alert_events\\` \n                SET \\`level\\`='critical', \\`trigger_value\\`=?, \\`room_name\\`=? \n                WHERE \\`event_id\\`=?;\n                \n                INSERT INTO \\`alert_event_log\\` (\\`event_id\\`, \\`action\\`, \\`level\\`, \\`value\\`, \\`actor\\`, \\`ts\\`, \\`mac\\`, \\`sensor_name\\`, \\`metric\\`) \n                VALUES (?, 'upgrade', 'critical', ?, 'System', ?, ?, ?, ?);\n            `, // ✨ จุดที่ 4\n            payload: [\n                value, room, eventToUpdate,\n                eventToUpdate, value, now_sql, mac, sensor, metric\n            ]\n        };\n        // Pass essential info for notification\n        outputs[1] = {\n            payload: {\n                type: 'upgrade',\n                level: 'critical',\n                event_id: eventToUpdate,\n                dedup_key: dedup_key,\n                mac,\n                sensor_name: sensor,\n                metric,\n                value,\n                ts: now_iso,\n                room_name: room, // <-- ADDED\n                warn_min: rule.warn_min, // <-- ADDED\n                warn_max: rule.warn_max  // <-- ADDED\n            }\n        };\n    } else {\n        \n        // Just a heartbeat update\n        outputs[0] = {\n            topic: `UPDATE \\`alert_events\\` SET \\`last_updated\\`=? WHERE \\`event_id\\`=?;`,\n            payload: [now_sql, eventToUpdate]\n        };\n    }\n}\n\nstates[dedup_key] = state;\nflow.set('alert_states', states);\n\nif (outputs.some(o => o !== null)) {\n    return outputs;\n}\nreturn null;",
         "outputs": 3,
         "timeout": 0,
         "noerr": 0,
@@ -1792,7 +1666,7 @@
         "g": "c7e3510948f6624e",
         "mydb": "5e560f07cfec117a",
         "name": "alert_events",
-        "x": 850,
+        "x": 910,
         "y": 760,
         "wires": [
             []
@@ -1874,7 +1748,7 @@
         "z": "640c6734fdac3595",
         "g": "be536ff9b21472e1",
         "name": "Query alert evet lists",
-        "func": "// Function: Query alert event lists (V5 - Correct Closed/Recovery Logic)\n\nconst q = (msg.req && msg.req.query) ? msg.req.query : {};\nconst statusFilter = (q.status || 'open,ack').toLowerCase();\nconst startDate = q.start;\nconst endDate = q.end;\n\nfunction toSqlDatetime(isoString) {\n    if (!isoString) return null;\n    try {\n        const d = new Date(isoString);\n        // Adjust for timezone to get local time for DB\n        const tzOffset = d.getTimezoneOffset() * 60000;\n        const localTime = new Date(d.getTime() - tzOffset);\n        return localTime.toISOString().slice(0, 19).replace('T', ' ');\n    } catch (e) {\n        return null;\n    }\n}\n\nlet sql = `\nSELECT \n    event_id, mac, room_name, sensor_name, metric, level, status,\n    opened_at, ack_at, closed_at, ack_by, ack_note, trigger_value,\n    CASE\n        WHEN status = 'closed' OR status = 'recovery' THEN closed_at\n        WHEN status = 'ack' THEN ack_at\n        ELSE opened_at\n    END AS display_time\nFROM alert_events\n`;\n\nconst conditions = [];\nconst params = [];\n\nconst statuses = statusFilter.split(',').map(s => s.trim()).filter(Boolean);\nif (statuses.length > 0) {\n    // ✨ FIX 1: ถ้าผู้ใช้ขอ \"closed\" ให้เราดึงทั้ง \"closed\" และ \"recovery\"\n    if (statuses.includes('closed')) {\n        if (!statuses.includes('recovery')) {\n            statuses.push('recovery');\n        }\n    }\n    conditions.push(`status IN (${statuses.map(() => '?').join(',')})`);\n    params.push(...statuses);\n}\n\nif (q.mac) {\n    conditions.push('mac = ?');\n    params.push(q.mac);\n}\n\n// ✨ FIX 2: ใช้ Date Filtering กับ `closed_at` เมื่อเป็นแท็บ 'closed' เท่านั้น\nif (statusFilter.includes('closed')) {\n    const startSql = toSqlDatetime(startDate);\n    const endSql = toSqlDatetime(endDate);\n    if (startSql && endSql) {\n        conditions.push('closed_at BETWEEN ? AND ?');\n        params.push(startSql, endSql);\n    }\n}\n\nif (conditions.length > 0) {\n    sql += ' WHERE ' + conditions.join(' AND ');\n}\n\nsql += ' ORDER BY display_time DESC';\n\nconst pageSize = parseInt(q.page_size, 10) || 50;\nconst page = parseInt(q.page, 10) || 1;\nconst offset = (page - 1) * pageSize;\nsql += ` LIMIT ${pageSize} OFFSET ${offset}`;\n\nmsg.topic = sql;\nmsg.payload = params;\n\nreturn msg;",
+        "func": "// Query alert event lists (V11) — no LIMIT, ต้องพึ่งช่วงเวลา; รองรับ sort และ last_log\n\nconst q = (msg.req && msg.req.query) ? msg.req.query : {};\nconst windowMode = String(q.window || '').toLowerCase();   // 'all' = ไม่ตัดเวลา (ระวัง!)\nconst lastLogOnly = String(q.last_log || '0') === '1';     // 1 = ดึงเฉพาะ log ล่าสุดต่อ event\nlet statuses = String(q.status || 'open,ack,closed,recovery')\n  .toLowerCase().split(',').map(s => s.trim()).filter(Boolean);\n\n// ถ้าใส่ closed แต่ลืม recovery ให้เติมเอง\nif (statuses.includes('closed') && !statuses.includes('recovery')) {\n  statuses.push('recovery');\n}\n\n// helper: 'YYYY-MM-DD HH:MM:SS'\nfunction toSqlDatetime(d) {\n  const pad = n => String(n).padStart(2, '0');\n  const y = d.getFullYear(), m = pad(d.getMonth()+1), day = pad(d.getDate());\n  const h = pad(d.getHours()), mi = pad(d.getMinutes()), s = pad(d.getSeconds());\n  return `${y}-${m}-${day} ${h}:${mi}:${s}`;\n}\n\n// default window = 24 ชม. ล่าสุด ถ้าไม่ได้สั่ง window=all\nconst now = new Date();\nconst endAt = q.end ? new Date(q.end) : now;\nconst startAt = q.start ? new Date(q.start) : new Date(endAt.getTime() - 24*60*60*1000);\nconst endSql = toSqlDatetime(isNaN(endAt) ? now : endAt);\nconst startSql = toSqlDatetime(isNaN(startAt) ? new Date(now.getTime() - 24*60*60*1000) : startAt);\n\n// sort\nconst sort = (q.sort || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';\n\n// Base FROM + JOIN\nlet fromSql;\nif (lastLogOnly) {\n  fromSql = `\n    FROM alert_events AS evt\n    LEFT JOIN (\n      SELECT l1.event_id, MAX(l1.ts) AS last_ts\n      FROM alert_event_log l1\n      GROUP BY l1.event_id\n    ) latest ON latest.event_id = evt.event_id\n    LEFT JOIN alert_event_log AS log\n      ON log.event_id = latest.event_id AND log.ts = latest.last_ts\n  `;\n} else {\n  fromSql = `\n    FROM alert_events AS evt\n    LEFT JOIN alert_event_log AS log\n      ON log.event_id = evt.event_id\n  `;\n}\n\nconst cond = [];\nconst params = [];\n\n// สถานะ\nif (statuses.length) {\n  cond.push(`evt.status IN (${statuses.map(() => '?').join(',')})`);\n  params.push(...statuses);\n}\n\n// MAC\nif (q.mac) {\n  cond.push(`evt.mac = ?`);\n  params.push(q.mac);\n}\n\n// เวลาทับซ้อน (เว้นแต่ window=all)\nif (windowMode !== 'all') {\n  cond.push(`evt.opened_at <= ?`);\n  params.push(endSql);\n  cond.push(`(evt.closed_at IS NULL OR evt.closed_at >= ?)`);\n  params.push(startSql);\n\n  // ถ้าอยากกรอง log ให้ตรงช่วงด้วย เปิดอันนี้ (ปกติไม่จำเป็น)\n  // cond.push(`(log.ts IS NULL OR (log.ts BETWEEN ? AND ?))`);\n  // params.push(startSql, endSql);\n}\n\n// fail-safe เล็กน้อย: ถ้า window=all แล้วไม่ใส่ status/mac เลย เตือนตัวเองไว้ก่อน\nif (windowMode === 'all' && !q.mac && statuses.length === 0) {\n  node.warn('⚠️ window=all แบบโล่งโจ้ง จะดึงทั้งตารางนะพ่อคุณ');\n}\n\nlet whereSql = cond.length ? ` WHERE ` + cond.join(' AND ') : ``;\n\n// SELECT data — ไม่มี LIMIT ตรงนี้\nlet dataSql = `\nSELECT \n  COALESCE(log.ts, evt.opened_at) AS display_time,\n  log.ts AS log_ts,\n  log.action, log.level, log.value, log.actor AS ack_by, log.note AS ack_note,\n  evt.event_id, evt.mac, evt.room_name, evt.sensor_name, evt.metric,\n  evt.status, evt.trigger_value, evt.opened_at, evt.ack_at, evt.closed_at\n${fromSql}\n${whereSql}\nORDER BY display_time ${sort}\n`;\n\nmsg.topic = dataSql;\nmsg.payload = params;\n\nnode.status({ fill: 'green', shape: 'dot', text: `alerts q: ${windowMode||'24h'} no-limit ${lastLogOnly?'lastLog':''}` });\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2270,17 +2144,6 @@
         "info": "",
         "x": 280,
         "y": 200,
-        "wires": []
-    },
-    {
-        "id": "320af7eb35ac1c83",
-        "type": "comment",
-        "z": "640c6734fdac3595",
-        "g": "7bdaf4cb89927b60",
-        "name": "เช็ค Status ส่งไปหน้าเว็บและจัดเก็บใน DB",
-        "info": "",
-        "x": 250,
-        "y": 460,
         "wires": []
     },
     {
@@ -2746,7 +2609,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 870,
+        "x": 910,
         "y": 880,
         "wires": [
             [
@@ -2858,14 +2721,14 @@
         "z": "640c6734fdac3595",
         "g": "c7e3510948f6624e",
         "name": "Adapt Offline Status for Alert",
-        "func": "// Function Node: (NEW) Adapt Offline Status for Alert\n// ทำหน้าที่แปลง msg จากระบบ Ping/MQTT check ให้อยู่ในรูปแบบที่ระบบ Alert เข้าใจได้\n\nconst p = msg.payload;\n// เอา event_id และ level จาก Flow context มาใช้\nconst states = flow.get('alert_states') || {};\nconst state = states[p.mac + '|device_status|connectivity'] || {};\n\n// 1. ตรวจสอบว่ามีข้อมูล mac และ status มาหรือไม่\nif (!p || !p.mac || !p.status) {\n    return null; // ถ้าไม่มีข้อมูลที่จำเป็น ก็ไม่ต้องทำอะไรต่อ\n}\n\n// 2. เราสนใจแค่ตอนที่สถานะเป็น 'offline'\n// ถ้า 'online' เราจะส่งค่า value = 1 เพื่อให้ระบบใช้ในการ Recovery (ปิด Alert)\nconst isOffline = (p.status.toLowerCase() === 'offline');\nconst alertValue = isOffline ? 0 : 1;\n\n// 3. สร้าง payload ใหม่ในรูปแบบที่ Function 'Check condition and insert' (ID: 676bd48cd34d868a) ต้องการ\nconst newPayload = {\n    mac: p.mac,\n    sensor_name: 'device_status', // ชื่อเซ็นเซอร์เสมือนสำหรับสถานะอุปกรณ์\n    metric: 'connectivity',     // Metric ใหม่สำหรับ Alert ประเภทนี้\n    value: alertValue,          // 0 = offline, 1 = online\n    ts: new Date().toISOString()\n};\n\n// 4. ถ้าสถานะเป็น 'online' และมี event_id ของ alert ที่เปิดอยู่ ให้แนบ event_id นั้นไปกับ payload ด้วย\n// เพื่อให้ Alert Engine รู้ว่าต้องปิด alert ตัวไหน\nif (!isOffline && state.event_id) {\n    newPayload.event_id = state.event_id;\n    newPayload.level = state.level;\n    newPayload.status = state.status;\n}\n\nmsg.payload = newPayload;\nreturn msg;",
+        "func": "// Function Node: (NEW) Adapt Offline Status for Alert\n// ทำหน้าที่แปลง msg จากระบบ Ping/MQTT check ให้อยู่ในรูปแบบที่ระบบ Alert เข้าใจได้\n\nconst p = msg.payload;\n// เอา event_id และ level จาก Flow context มาใช้\nconst states = flow.get('alert_states') || {};\nconst state = states[p.mac + '|device_status|connectivity'] || {};\n\n// 1. ตรวจสอบว่ามีข้อมูล mac และ status มาหรือไม่\nif (!p || !p.mac || !p.status) {\n    return null; // ถ้าไม่มีข้อมูลที่จำเป็น ก็ไม่ต้องทำอะไรต่อ\n}\n\n// 2. เราสนใจแค่ตอนที่สถานะเป็น 'offline'\n// ถ้า 'online' เราจะส่งค่า value = 1 เพื่อให้ระบบใช้ในการ Recovery (ปิด Alert)\nconst isOffline = (p.status.toLowerCase() === 'offline');\nconst alertValue = isOffline ? 0 : 1;\n\n// 3. สร้าง payload ใหม่ในรูปแบบที่ Function 'Check condition and insert' (ID: 676bd48cd34d868a) ต้องการ\nconst newPayload = {\n    mac: p.mac,\n    sensor_name: 'Device', // ชื่อเซ็นเซอร์เสมือนสำหรับสถานะอุปกรณ์\n    metric: 'connectivity',     // Metric ใหม่สำหรับ Alert ประเภทนี้\n    value: alertValue,          // 0 = offline, 1 = online\n    ts: new Date().toISOString()\n};\n\n// 4. ถ้าสถานะเป็น 'online' และมี event_id ของ alert ที่เปิดอยู่ ให้แนบ event_id นั้นไปกับ payload ด้วย\n// เพื่อให้ Alert Engine รู้ว่าต้องปิด alert ตัวไหน\nif (!isOffline && state.event_id) {\n    newPayload.event_id = state.event_id;\n    newPayload.level = state.level;\n    newPayload.status = state.status;\n}\n\nmsg.payload = newPayload;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 520,
+        "x": 640,
         "y": 760,
         "wires": [
             [
@@ -2961,7 +2824,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 670,
+        "x": 650,
         "y": 880,
         "wires": [
             [
@@ -2993,8 +2856,9 @@
         "z": "640c6734fdac3595",
         "g": "37e675817144b486",
         "name": "1. Prepare Info & Sensor Query",
-        "func": "const q = msg.req.query || {};\nconst { room, type, from, to, sensors } = q;\n\nif (!room || !type || !from || !to) {\n    msg.statusCode = 400;\n    msg.payload = { error: 'Missing required parameters' };\n    return msg;\n}\n\nconst deviceMap = flow.get('device_map', 'file') || {};\nconst pinMap = global.get('mac_pin_names') || {};\nlet macs = [];\nlet roomNameMap = {};\n\nif (room === 'all') {\n    ['A', 'B', 'C', 'D'].forEach(char => {\n        const mac = deviceMap[`room${char}`];\n        if (mac && mac.includes(':')) {\n            macs.push(mac);\n            roomNameMap[mac] = deviceMap[`name${char}`] || `Room ${char}`;\n        }\n    });\n} else {\n    const roomKey = `room${room.slice(-1).toUpperCase()}`;\n    const nameKey = `name${room.slice(-1).toUpperCase()}`;\n    const mac = deviceMap[roomKey];\n    if (mac) {\n        macs.push(mac);\n        roomNameMap[mac] = deviceMap[nameKey] || room.replace('-', ' ');\n    }\n}\n\nif (macs.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: `No MAC address found for room: ${room}` };\n    return msg;\n}\n\nmsg.reportInfo = {\n    type: type,\n    filename: `Report_${room.replace('-', '_')}_${new Date().toISOString().slice(0, 10)}.${type}`,\n    maps: {\n        roomNames: roomNameMap,\n        pinNames: pinMap\n    },\n    params: { from, to, macs, sensors, room: room }\n};\n\nlet sensorSql = `\nSELECT \n    t.timestamp, t.mac, t.pin AS sensor_pin, t.avg_temp AS temperature, t.avg_hum AS humidity,\n    (243.12 * (LN(GREATEST(1e-6, t.avg_hum/100)) + (17.62*t.avg_temp)/(243.12+t.avg_temp)) ) / (17.62 - (LN(GREATEST(1e-6, t.avg_hum/100)) + (17.62*t.avg_temp)/(243.12+t.avg_temp))) AS dew_point\nFROM dht_22 t\nWHERE t.mac IN (${macs.map(() => '?').join(',')}) AND t.timestamp BETWEEN ? AND ?`;\nconst sensorParams = [...macs, from, to];\n\nif (sensors && room !== 'all') {\n    const sensorList = sensors.split(',');\n    sensorSql += ` AND t.pin IN (${sensorList.map(() => '?').join(',')})`;\n    sensorParams.push(...sensorList);\n}\nsensorSql += ` ORDER BY t.timestamp ASC;`;\n\nmsg.topic = sensorSql;\nmsg.payload = sensorParams;\n\nreturn msg;",
+        "func": "const q = msg.req.query || {};\nconst { room, type, from, to, sensors } = q;\n\nif (!room || !type || !from || !to) {\n    msg.statusCode = 400;\n    msg.payload = { error: 'Missing required parameters' };\n    return msg;\n}\n\nconst deviceMap = flow.get('device_map', 'file') || {};\nconst pinMap = global.get('mac_pin_names') || {};\nlet macs = [];\nlet roomNameMap = {};\nlet reportRoomName = 'Unknown'; // ✨ ตัวแปรใหม่สำหรับเก็บชื่อไฟล์\n\nif (room === 'all') {\n    reportRoomName = 'All_Rooms'; // ✨ ตั้งชื่อไฟล์สำหรับ \"All\"\n    ['A', 'B', 'C', 'D'].forEach(char => {\n        const mac = deviceMap[`room${char}`];\n        if (mac && mac.includes(':')) {\n            macs.push(mac);\n            roomNameMap[mac] = deviceMap[`name${char}`] || `Room ${char}`;\n        }\n    });\n} else {\n    const roomKey = `room${room.slice(-1).toUpperCase()}`;\n    const nameKey = `name${room.slice(-1).toUpperCase()}`;\n    const mac = deviceMap[roomKey];\n    if (mac) {\n        macs.push(mac);\n        const customName = deviceMap[nameKey] || room.replace('-', ' ');\n        roomNameMap[mac] = customName;\n        reportRoomName = customName.replace(/\\s+/g, '_'); // ✨ ใช้ชื่อที่ตั้งเองมาสร้างชื่อไฟล์\n    } else {\n        reportRoomName = room.replace('-', '_');\n    }\n}\n\nif (macs.length === 0) {\n    msg.statusCode = 404;\n    msg.payload = { error: `No MAC address found for room: ${room}` };\n    return msg;\n}\n\nmsg.reportInfo = {\n    type: type,\n    // ✨ แก้ไขบรรทัดนี้ให้ใช้ reportRoomName\n    filename: `Report_${reportRoomName}_${new Date().toISOString().slice(0, 10)}.${type}`,\n    maps: {\n        roomNames: roomNameMap,\n        pinNames: pinMap\n    },\n    params: { from, to, macs, sensors, room: room }\n};\n\nlet sensorSql = `\nSELECT \n    t.timestamp, t.mac, t.pin AS sensor_pin, t.avg_temp AS temperature, t.avg_hum AS humidity,\n    (243.12 * (LN(GREATEST(1e-6, t.avg_hum/100)) + (17.62*t.avg_temp)/(243.12+t.avg_temp)) ) / (17.62 - (LN(GREATEST(1e-6, t.avg_hum/100)) + (17.62*t.avg_temp)/(243.12+t.avg_temp))) AS dew_point\nFROM dht_22 t\nWHERE t.mac IN (${macs.map(() => '?').join(',')}) AND t.timestamp BETWEEN ? AND ?`;\nconst sensorParams = [...macs, from, to];\n\nif (sensors && room !== 'all') {\n    const sensorList = sensors.split(',');\n    sensorSql += ` AND t.pin IN (${sensorList.map(() => '?').join(',')})`;\n    sensorParams.push(...sensorList);\n}\nsensorSql += ` ORDER BY t.timestamp ASC;`;\n\nmsg.topic = sensorSql;\nmsg.payload = sensorParams;\n\nreturn msg;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
@@ -3023,26 +2887,6 @@
         ]
     },
     {
-        "id": "57fe4cea096dc9a9",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "37e675817144b486",
-        "name": "2. Prepare Alert Query",
-        "func": "msg.results = {\n    sensors: msg.payload\n};\n\nconst { from, to, macs } = msg.reportInfo.params;\n\nconst alertSql = `\nSELECT \n    opened_at AS alert_time, mac, room_name, sensor_name, metric, level, trigger_value, \n    status, ack_by AS acknowledged_by, ack_at AS acknowledged_time, closed_at AS closed_time \nFROM alert_events \nWHERE mac IN (${macs.map(() => '?').join(',')}) AND opened_at BETWEEN ? AND ? \nORDER BY opened_at ASC;`;\nconst alertParams = [...macs, from, to];\n\nmsg.topic = alertSql;\nmsg.payload = alertParams;\n\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 3380,
-        "y": 1320,
-        "wires": [
-            [
-                "417fa61902dccc67"
-            ]
-        ]
-    },
-    {
         "id": "417fa61902dccc67",
         "type": "mysql",
         "z": "640c6734fdac3595",
@@ -3063,7 +2907,7 @@
         "z": "640c6734fdac3595",
         "g": "37e675817144b486",
         "name": "3. Prepare Data",
-        "func": "const alerts = msg.payload;\nconst sensors = msg.results.sensors;\nconst reportInfo = msg.reportInfo;\n\nif (!reportInfo) {\n    node.error(\"Critical Error: reportInfo object is missing.\", msg);\n    msg.statusCode = 500;\n    msg.payload = \"Server error: Could not process report data.\";\n    return msg;\n}\n\nconst { roomNames, pinNames } = reportInfo.maps;\n\nconst formatDate = (isoString) => {\n    if (!isoString) return '';\n    try {\n        return new Date(isoString).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });\n    } catch (e) { return isoString; }\n};\n\nmsg.formattedData = {\n    sensors: sensors.map(s => {\n        const sensor_name = (pinNames[s.mac] && pinNames[s.mac][`name_pin_${s.sensor_pin}`]) || `Pin ${s.sensor_pin}`;\n        return {\n            'Timestamp': formatDate(s.timestamp),\n            'Room Name': roomNames[s.mac] || s.mac,\n            'MAC Address': s.mac,\n            'Sensor Pin': s.sensor_pin,\n            'Sensor Name': sensor_name,\n            'Temperature (°C)': (s.temperature === null || s.temperature === undefined) ? null : Number(Number(s.temperature).toFixed(2)),\n            'Humidity (%)': (s.humidity === null || s.humidity === undefined) ? null : Number(Number(s.humidity).toFixed(2)),\n            'Dew Point (°C)': (s.dew_point === null || s.dew_point === undefined) ? null : Number(Number(s.dew_point).toFixed(2)),\n\n        };\n    }),\n    alerts: alerts.map(a => ({\n        'Alert Time': formatDate(a.alert_time),\n        'Room Name': a.room_name,\n        'Sensor Name': a.sensor_name,\n        'Metric': a.metric,\n        'Level': a.level,\n        'Value': a.trigger_value,\n        'Status': a.status,\n        'Ack By': a.acknowledged_by,\n        'Ack Time': formatDate(a.acknowledged_time),\n        'Closed Time': formatDate(a.closed_time)\n    }))\n};\n\nreturn msg;",
+        "func": "const alerts = msg.payload;\nconst sensors = msg.results.sensors;\nconst reportInfo = msg.reportInfo;\n\nif (!reportInfo) {\n    node.error(\"Critical Error: reportInfo object is missing.\", msg);\n    msg.statusCode = 500;\n    msg.payload = \"Server error: Could not process report data.\";\n    return msg;\n}\n\nconst { roomNames, pinNames } = reportInfo.maps;\n\nconst formatDate = (isoString) => {\n    if (!isoString) return '';\n    try {\n        return new Date(isoString).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });\n    } catch (e) { return isoString; }\n};\n\n// ✨ FIX: แก้ไขการ map ชื่อ Metric ให้ถูกต้องทั้งหมด ✨\nconst metricMap = {\n    temp: 'Temperature',\n    hum: 'Humidity',\n    connectivity: 'Connectivity',\n    sensor_connectivity: 'Sensor Connectivity'\n};\n\nmsg.formattedData = {\n    sensors: sensors.map(s => {\n        const sensor_name = (pinNames[s.mac] && pinNames[s.mac][`name_pin_${s.sensor_pin}`]) || `Pin ${s.sensor_pin}`;\n        return {\n            'Timestamp': formatDate(s.timestamp),\n            'Room Name': roomNames[s.mac] || s.mac,\n            'MAC Address': s.mac,\n            'Sensor Pin': s.sensor_pin,\n            'Sensor Name': sensor_name,\n            'Temperature (°C)': (s.temperature === null || s.temperature === undefined) ? null : Number(Number(s.temperature).toFixed(2)),\n            'Humidity (%)': (s.humidity === null || s.humidity === undefined) ? null : Number(Number(s.humidity).toFixed(2)),\n            'Dew Point (°C)': (s.dew_point === null || s.dew_point === undefined) ? null : Number(Number(s.dew_point).toFixed(2)),\n        };\n    }),\n    alerts: alerts.map(a => ({\n        'Alert Time': formatDate(a.alert_time),\n        'Room Name': a.room_name,\n        'Sensor Name': a.sensor_name,\n        'Metric Raw': a.metric_raw,                  // << ใส่คอลัมน์ดิบ\n        'Metric': metricMap[a.metric] || a.metric,   // << ชื่ออ่านง่ายหลัง normalize\n        'Level': a.level,\n        'Value': a.trigger_value,\n        'Status': a.status,\n        'Ack By': a.acknowledged_by,\n        'Ack Time': formatDate(a.acknowledged_time),\n        'Closed Time': formatDate(a.closed_time)\n    }))\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -3116,8 +2960,9 @@
         "z": "640c6734fdac3595",
         "g": "37e675817144b486",
         "name": "4a. Create CSV String",
-        "func": "const { sensors, alerts } = msg.formattedData;\nconst { filename } = msg.reportInfo;\n\nconst csvSafe = (val) => {\n    if (val === null || val === undefined) return '';\n    let str = String(val);\n    if (str.includes(',') || str.includes('\"') || str.includes('\\n')) {\n        str = str.replace(/\"/g, '\"\"');\n        return `\"${str}\"`;\n    }\n    return str;\n};\n\nlet csvString = '';\n\nconst sensorHeaders = ['Timestamp', 'Room Name', 'MAC Address', 'Sensor Pin', 'Sensor Name', 'Temperature (°C)', 'Humidity (%)', 'Dew Point (°C)'];\ncsvString += '### SENSOR DATA ###\\n';\ncsvString += sensorHeaders.join(',') + '\\n';\nsensors.forEach(s => {\n    const row = sensorHeaders.map(h => csvSafe(s[h]));\n    csvString += row.join(',') + '\\n';\n});\n\nconst alertHeaders = ['Alert Time', 'Room Name', 'Sensor Name', 'Metric', 'Level', 'Value', 'Status', 'Ack By', 'Ack Time', 'Closed Time'];\ncsvString += '\\n### ALERT HISTORY ###\\n';\ncsvString += alertHeaders.join(',') + '\\n';\nalerts.forEach(a => {\n    const row = alertHeaders.map(h => csvSafe(a[h]));\n    csvString += row.join(',') + '\\n';\n});\n\nmsg.headers = { 'Content-Disposition': `attachment; filename=\"${filename}\"`, 'Content-Type': 'text/csv; charset=utf-8' };\nmsg.payload = csvString;\n\nreturn msg;",
+        "func": "const { sensors, alerts } = msg.formattedData;\nconst { filename } = msg.reportInfo;\n\nconst csvSafe = (val) => {\n    if (val === null || val === undefined) return '';\n    let str = String(val);\n    if (str.includes(',') || str.includes('\"') || str.includes('\\n')) {\n        str = str.replace(/\"/g, '\"\"');\n        return `\"${str}\"`;\n    }\n    return str;\n};\n\nlet csvString = '';\n\nconst sensorHeaders = ['Timestamp', 'Room Name', 'MAC Address', 'Sensor Pin', 'Sensor Name', 'Temperature (°C)', 'Humidity (%)', 'Dew Point (°C)'];\ncsvString += '### SENSOR DATA ###\\n';\ncsvString += sensorHeaders.join(',') + '\\n';\nsensors.forEach(s => {\n    const row = sensorHeaders.map(h => csvSafe(s[h]));\n    csvString += row.join(',') + '\\n';\n});\n\nconst alertHeaders = ['Alert Time', 'Room Name', 'Sensor Name', 'Metric Raw', 'Metric', 'Level', 'Value', 'Status', 'Ack By', 'Ack Time', 'Closed Time'];\ncsvString += '\\n### ALERT HISTORY ###\\n';\ncsvString += alertHeaders.join(',') + '\\n';\nalerts.forEach(a => {\n    const row = alertHeaders.map(h => csvSafe(a[h]));\n    csvString += row.join(',') + '\\n';\n});\n\nmsg.headers = { 'Content-Disposition': `attachment; filename=\"${filename}\"`, 'Content-Type': 'text/csv; charset=utf-8' };\nmsg.payload = csvString;\n\nreturn msg;\n",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
@@ -3584,7 +3429,7 @@
         "z": "640c6734fdac3595",
         "g": "764e306119ec0e9d",
         "name": "Update Cron Schedule",
-        "func": "// ตั้งค่าเริ่มต้นกรณีไม่เคยบันทึกจาก UI มาก่อน\nconst DEFAULT_SETTINGS = {\n    recipients: { email: [], telegram: [] },\n    schedule: {\n        weekdays: [true, true, true, true, true, true, true],   // อา..ส\n        configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n    }\n};\n\n// โหลดค่าจาก flow; ถ้าไม่มี หรือโครงสร้างพัง ให้ใช้ค่าเริ่มต้นและบันทึกกลับ\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n    node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n    settings = DEFAULT_SETTINGS;\n    flow.set(\"notificationSettings\", settings);\n}\n\n// daysOfWeek เป็น 0-6 (0=Sunday) ตาม cron\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst daysOfWeekStr = weekdays\n    .map((isSelected, idx) => isSelected ? idx : -1)\n    .filter(idx => idx !== -1)\n    .join(',');\n\n// เคลียร์งานเก่าทิ้งก่อนเสมอ\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ถ้าไม่ได้เลือกวัน หรือไม่มีตารางเวลา ให้ลบงานทั้งหมดแล้วจบ\nif (!daysOfWeekStr || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n    node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n    return [[removeAllMsg], null];\n}\n\n// สร้างงานใหม่ตามแต่ละ config\nconst addMsgs = settings.schedule.configs\n    .filter(cfg => cfg && typeof cfg.sendAt === 'string' && cfg.sendAt.includes(':'))\n    .map((cfg, index) => {\n        const [hour, minute] = cfg.sendAt.split(':').map(s => String(s).trim());\n        const name = `digest-schedule-${index}`;\n        return {\n            payload: {\n                command: \"add\",\n                name,\n                // ใช้ expressionType แทน type\n                expression: `${minute} ${hour} * * ${daysOfWeekStr}`,\n                expressionType: \"cron\",\n                // ส่ง config ทั้งก้อนออกไปตอน trigger\n                payload: cfg,\n                payloadType: \"json\"\n            }\n        };\n    });\n\n\n// ส่งออก: output1 = remove-all, output2 = ชุด add\nreturn [[removeAllMsg], addMsgs];\n",
+        "func": "// Update Cron Schedule (patched)\n// สร้าง/ลบ schedule ใน cronplus ให้ยิงตาม UI settings\nconst DEFAULT_SETTINGS = {\n  recipients: { email: [], telegram: [] },\n  schedule: {\n    weekdays: [true,true,true,true,true,true,true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n  }\n};\n\n// โหลดค่า config\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n  node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n  settings = DEFAULT_SETTINGS;\n  flow.set(\"notificationSettings\", settings);\n}\n\n// วันในสัปดาห์ (0=Sun..6=Sat)\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst selectedDOW = weekdays\n  .map((isOn, idx) => isOn ? idx : -1)\n  .filter(v => v !== -1);\n\n// เคลียร์งานเก่าก่อน\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ไม่มีวันหรือไม่มีตารางเวลา → ลบแล้วจบ\nif (selectedDOW.length === 0 || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n  node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n  return [[removeAllMsg], null];\n}\n\n// ทำ string DOW\nconst daysOfWeekStr = selectedDOW.join(',');\n\n// timeZone ที่จะใช้ทั้งใน node และในคำสั่ง\nconst TZ = \"Asia/Bangkok\";\n\n// สร้าง job ใหม่ตามแต่ละ config\nconst crypto = (s)=> {\n  // แฮชจิ๋วกันชื่อชน (ไม่ต้องเอาจริงจัง)\n  let h = 0; for (let i=0;i<s.length;i++) h = ((h<<5)-h) + s.charCodeAt(i) | 0;\n  return Math.abs(h).toString(36).slice(0,5);\n};\n\nconst addMsgs = settings.schedule.configs\n  .filter(cfg => cfg && typeof cfg.sendAt === \"string\" && cfg.sendAt.includes(\":\"))\n  .map((cfg) => {\n    const [hourStr, minuteStr] = cfg.sendAt.split(\":\").map(s => String(s).trim());\n    const hour = String(parseInt(hourStr, 10));\n    const minute = String(parseInt(minuteStr, 10));\n\n    // cron 6 ฟิลด์: sec min hour dom month dow\n    const expression = `0 ${minute} ${hour} * * ${daysOfWeekStr}`;\n\n    // ทำชื่อ job ให้คงที่แต่ไม่ชนกันง่าย\n    const sig = `${hour}:${minute}|${daysOfWeekStr}|${cfg.rangeStart||''}-${cfg.rangeEnd||''}`;\n    const name = `digest-${crypto(sig)}`;\n\n    return {\n      payload: {\n        command: \"add\",\n        name,\n        expressionType: \"cron\",\n        expression,\n        timeZone: TZ,\n        // payload ที่ปล่อยตอนถึงเวลา ให้พก cfg ออกไปด้วย\n        payload: {\n          kind: \"daily-digest-trigger\",\n          schedule: { ...cfg, daysOfWeekStr, timeZone: TZ }\n        },\n        payloadType: \"json\"\n      }\n    };\n  });\n\n// ส่งออก: output1 = remove-all, output2 = add ทั้งหมด\nreturn [[removeAllMsg], addMsgs];\n",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -3617,9 +3462,10 @@
         "id": "2a78b5cd6ba1b8d3",
         "type": "subflow:c1a8b9f7.1d2e3f",
         "z": "640c6734fdac3595",
+        "d": true,
         "g": "c7e3510948f6624e",
         "name": "",
-        "x": 870,
+        "x": 930,
         "y": 820,
         "wires": []
     },
@@ -3636,7 +3482,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
+        "x": 640,
         "y": 720,
         "wires": [
             [
@@ -3645,29 +3491,13 @@
         ]
     },
     {
-        "id": "278d32aa39cce8a9",
-        "type": "debug",
-        "z": "640c6734fdac3595",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 2960,
-        "y": 1540,
-        "wires": []
-    },
-    {
         "id": "246c8e40ce7babbb",
         "type": "cronplus",
         "z": "640c6734fdac3595",
         "g": "764e306119ec0e9d",
         "name": "Daily Digest Scheduler",
         "outputField": "payload",
-        "timeZone": "",
+        "timeZone": "Asia/Bangkok",
         "storeName": "",
         "commandResponseMsgOutput": "output2",
         "defaultLocation": "",
@@ -3677,11 +3507,171 @@
         "x": 2260,
         "y": 1400,
         "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "57fe4cea096dc9a9",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "g": "37e675817144b486",
+        "name": "2. Prepare Alert Query",
+        "func": "msg.results = {\n    sensors: msg.payload\n};\n\nconst { from, to, macs } = msg.reportInfo.params;\n\n// ✨ FIX: เพิ่มฟังก์ชันแปลงเวลา Local สำหรับ Database ✨\nfunction toSqlLocal(isoString) {\n    if (!isoString) return null;\n    try {\n        const d = new Date(isoString);\n        // คำนวณ Offset ของ Timezone เพื่อให้ได้เวลา Local ที่ถูกต้อง\n        const tzOffset = d.getTimezoneOffset() * 60000;\n        const localTime = new Date(d.getTime() - tzOffset);\n        // แปลงเป็นฟอร์แมต 'YYYY-MM-DD HH:MM:SS' ที่ Database เข้าใจ\n        return localTime.toISOString().slice(0, 19).replace('T', ' ');\n    } catch (e) {\n        return isoString; // ถ้าแปลงไม่ได้ ให้ใช้ค่าเดิม\n    }\n}\n\n// แปลงเวลาที่รับมาจาก UI ให้เป็น Local Time ของ Database\nconst fromSql = toSqlLocal(from);\nconst toSql = toSqlLocal(to);\n\n\n// ✨ SQL Query ที่รวม Logic การแปลง Metric และเงื่อนไขเวลาที่ถูกต้อง ✨\nconst alertSql = `\nSELECT\n    opened_at AS alert_time,\n    mac,\n    room_name,\n    sensor_name,\n    metric AS metric_raw,\n    -- 'metric' ของ sensor offline จะถูกเก็บเป็น 'sensor_connectivity' อยู่แล้ว\n    -- ดังนั้นเราไม่จำเป็นต้องใช้ CASE statement ในส่วนนี้\n    metric,\n    level,\n    trigger_value,\n    status,\n    ack_by AS acknowledged_by,\n    ack_at AS acknowledged_time,\n    closed_at AS closed_time\nFROM alert_events\nWHERE\n    mac IN (${macs.map(() => '?').join(',')})\n    AND opened_at <= ?\n    AND (closed_at IS NULL OR closed_at >= ?)\nORDER BY opened_at ASC;`;\n\n// ใช้เวลาที่แปลงแล้ว (toSql, fromSql) ในการส่ง Query\nconst alertParams = [...macs, toSql, fromSql];\n\nmsg.topic = alertSql;\nmsg.payload = alertParams;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3380,
+        "y": 1320,
+        "wires": [
             [
-                "278d32aa39cce8a9"
+                "417fa61902dccc67"
+            ]
+        ]
+    },
+    {
+        "id": "77971b6e431ea86d",
+        "type": "ping",
+        "z": "640c6734fdac3595",
+        "g": "3c7c28232df10c32",
+        "protocol": "Automatic",
+        "mode": "timed",
+        "name": "Ping",
+        "host": "192.168.42.30",
+        "timer": "10",
+        "inputs": 0,
+        "x": 150,
+        "y": 520,
+        "wires": [
+            [
+                "752553bd54961a67"
+            ]
+        ]
+    },
+    {
+        "id": "937c8093b89d17f4",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "g": "3c7c28232df10c32",
+        "name": "Insert to DB",
+        "func": "function toLocalSqlDate(d) {\n  d = d || new Date();\n  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);\n  return local.toISOString().slice(0,19).replace('T',' ');\n}\nlet data = msg.payload;\nlet time = data.event_time\n  ? toLocalSqlDate(new Date(data.event_time))\n  : toLocalSqlDate();\n\nmsg.topic = `\n  INSERT INTO esp_status_log\n    (mac, room, status, time)\n  VALUES\n    (\n      '${data.mac}',\n      '${data.room.replace(/'/g,\"''\")}',\n      '${data.status}',\n      '${time}'\n    );\n`.replace(/\\s+/g,' ');\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 620,
+        "wires": [
+            [
+                "4dca5a796b2469fc"
+            ]
+        ]
+    },
+    {
+        "id": "4dca5a796b2469fc",
+        "type": "mysql",
+        "z": "640c6734fdac3595",
+        "g": "3c7c28232df10c32",
+        "mydb": "5e560f07cfec117a",
+        "name": "esp_status_log",
+        "x": 660,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9bdb51bc33082cea",
+        "type": "mqtt in",
+        "z": "640c6734fdac3595",
+        "g": "3c7c28232df10c32",
+        "name": "Check MQTT",
+        "topic": "esp32/status",
+        "qos": "2",
+        "datatype": "json",
+        "broker": "8301192ec347dbc9",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 170,
+        "y": 560,
+        "wires": [
+            [
+                "752553bd54961a67"
+            ]
+        ]
+    },
+    {
+        "id": "22aacd3219d0cc15",
+        "type": "comment",
+        "z": "640c6734fdac3595",
+        "g": "3c7c28232df10c32",
+        "name": "เช็ค Status ส่งไปหน้าเว็บและจัดเก็บใน DB",
+        "info": "",
+        "x": 250,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "752553bd54961a67",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "g": "3c7c28232df10c32",
+        "name": "Check Status",
+        "func": "// --- ส่วนตั้งค่าอุปกรณ์ ---\n// เพิ่มอุปกรณ์ทั้งหมดที่ต้องการตรวจสอบในนี้\n// key คือ MAC Address, value คือ IP Address และชื่อห้อง\nconst deviceConfig = {\n    '94:B9:7E:CE:01:EF': { ip: '192.168.42.30', room: 'Server Room 1' }\n    // ตัวอย่างการเพิ่มอุปกรณ์ตัวที่สอง\n    // 'AA:BB:CC:DD:EE:FF': { ip: '192.168.42.31', room: 'Living Room' }\n};\n\n// --- ตัวแปร Global ---\n// ดึงข้อมูลสถานะล่าสุดของอุปกรณ์ทั้งหมดที่เก็บไว้\nlet states = flow.get('deviceStates') || {};\nconst MQTT_TIMEOUT_MS = 21000; // 21 วินาที: ถ้าไม่ได้รับ MQTT เกินเวลานี้ = ออฟไลน์\n\n// --- สร้าง Map สำหรับค้นหา MAC Address จาก IP ---\nconst ipToMacMap = {};\nfor (const mac in deviceConfig) {\n    ipToMacMap[deviceConfig[mac].ip] = mac;\n}\n\n// --- ฟังก์ชันช่วยเหลือ ---\nfunction now() { return Date.now(); }\n\nfunction normalizeMac(s) {\n    if (!s) return null;\n    s = String(s).toUpperCase().replace(/[^0-9A-F]/g, '');\n    if (s.length !== 12) return null;\n    return s.match(/.{2}/g).join(':');\n}\n\n// --- Logic หลัก ---\nlet mac = null;\nlet sourceType = null;\n\n// ตรวจสอบว่าข้อความมาจาก Ping หรือ MQTT\nif (msg.topic && ipToMacMap[msg.topic]) {\n    sourceType = \"Ping\";\n    mac = ipToMacMap[msg.topic];\n} else if (msg.topic && msg.topic.startsWith('esp32/')) {\n    sourceType = \"MQTT\";\n    // ลองดึง MAC จาก payload ก่อน\n    mac = normalizeMac(msg.payload && msg.payload.mac);\n    // ถ้าไม่มีใน payload ให้ดึงจาก topic\n    if (!mac) {\n        const parts = msg.topic.split('/');\n        if (parts.length >= 2) {\n            mac = normalizeMac(parts[1]);\n        }\n    }\n}\n\n// ถ้าหา MAC ไม่เจอ ไม่ต้องทำอะไรต่อ\nif (!mac || !deviceConfig[mac]) {\n    node.warn(`Could not determine MAC or device not in config. Topic: ${msg.topic}`);\n    return null;\n}\n\n// ถ้าเป็นอุปกรณ์ใหม่ ให้สร้าง state เริ่มต้น\nif (!states[mac]) {\n    states[mac] = {\n        pingOk: false,\n        mqttOk: false,\n        lastCombinedState: 'offline',\n        ping_ms: null,\n        lastMqttTs: 0\n    };\n}\n\n// เก็บสถานะเก่าไว้เปรียบเทียบ\nconst oldState = { ...states[mac] };\nconst deviceState = states[mac];\n\n// อัปเดตสถานะตามแหล่งที่มาของข้อมูล\nif (sourceType === \"MQTT\") {\n    const statusPayload = (msg.payload && msg.payload.status || '').toString().toLowerCase();\n    deviceState.mqttOk = (statusPayload === 'online');\n    deviceState.lastMqttTs = now(); // บันทึกเวลาที่ได้รับ MQTT ล่าสุด\n} else { // sourceType === \"Ping\"\n    deviceState.pingOk = (msg.payload !== false);\n    deviceState.ping_ms = (msg.payload !== false) ? Number(msg.payload) : oldState.ping_ms;\n}\n\n// ตรวจสอบ MQTT Timeout ทุกครั้ง ไม่ว่าจะได้รับข้อมูลจากไหน\n// ถ้าไม่ได้รับ MQTT มานานเกินกำหนด ให้ถือว่า mqttOk เป็น false\nif ((now() - deviceState.lastMqttTs) > MQTT_TIMEOUT_MS) {\n    deviceState.mqttOk = false;\n}\n\n// สรุปสถานะสุดท้ายของอุปกรณ์: ต้องเป็นจริงทั้งคู่ถึงจะ 'online'\nconst newCombinedState = (deviceState.pingOk && deviceState.mqttOk) ? 'online' : 'offline';\n\n// ตรวจสอบว่าสถานะมีการเปลี่ยนแปลงหรือไม่\nif (newCombinedState !== oldState.lastCombinedState) {\n    deviceState.lastCombinedState = newCombinedState;\n    flow.set('deviceStates', states); // บันทึกสถานะล่าสุดกลับเข้าไป\n\n    // ส่งข้อมูลออกไปเมื่อสถานะเปลี่ยนเท่านั้น\n    return {\n        payload: {\n            mac: mac,\n            room: deviceConfig[mac].room,\n            status: newCombinedState,\n            ping_ms: deviceState.ping_ms,\n            event_time: new Date().toISOString(),\n            pin: \"OVERALL\"\n        }\n    };\n}\n\n// ถ้าสถานะไม่เปลี่ยน ไม่ต้องส่งอะไรออกไป\nreturn null;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 520,
+        "wires": [
+            [
+                "f6bf0c6b76b28ba8",
+                "6889d15e433846c7",
+                "9708f9c81584ae9a"
+            ]
+        ]
+    },
+    {
+        "id": "f6bf0c6b76b28ba8",
+        "type": "switch",
+        "z": "640c6734fdac3595",
+        "g": "3c7c28232df10c32",
+        "name": "Status Switch",
+        "property": "payload.status",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "online",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "offline",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 220,
+        "y": 620,
+        "wires": [
+            [
+                "937c8093b89d17f4"
             ],
             [
-                "278d32aa39cce8a9"
+                "937c8093b89d17f4"
             ]
         ]
     },
@@ -3716,20 +3706,235 @@
         ]
     },
     {
-        "id": "a1393b23d3acbb21",
+        "id": "44d8975a73fc245d",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "GET /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1820,
+        "y": 1800,
+        "wires": [
+            [
+                "28f586b3ce011cd5"
+            ]
+        ]
+    },
+    {
+        "id": "28f586b3ce011cd5",
         "type": "function",
         "z": "640c6734fdac3595",
-        "name": "Rule loader",
-        "func": "// Function: load_rules_to_global (FIXED VERSION)\nconst rules = msg.payload;\nconst deviceMap = flow.get('device_map', 'file') || {};\n\n// ✨ START: จุดที่แก้ไข/เพิ่มเข้ามา ✨\n// เราจะค้นหากฎของระบบ (system-level rules) ทั้งหมดที่เรามี\nconst systemTempRule = rules.find(r => r.scope === 'system' && r.metric === 'temp' && r.active) || {};\nconst systemHumRule = rules.find(r => r.scope === 'system' && r.metric === 'hum' && r.active) || {};\nconst systemConnRule = rules.find(r => r.scope === 'system' && r.metric === 'connectivity' && r.active) || {}; // เพิ่มบรรทัดนี้\n// ✨ END: จุดที่แก้ไข/เพิ่มเข้ามา ✨\n\n\nconst roomRules = rules.filter(r => r.scope === 'room' && r.active);\nconst sensorRules = rules.filter(r => r.scope === 'sensor' && r.active);\n\nconst effectiveMap = {};\n\nconst inherit = (specific, room, system) => {\n    const origins = {};\n    const merged = {};\n    const allKeys = new Set([...Object.keys(system), ...Object.keys(room), ...Object.keys(specific)]);\n\n    for (const key of allKeys) {\n        if (specific && specific[key] !== null && specific[key] !== undefined) {\n            merged[key] = specific[key];\n            origins[key] = 'sensor';\n        } else if (room && room[key] !== null && room[key] !== undefined) {\n            merged[key] = room[key];\n            origins[key] = 'room';\n        } else if (system && system[key] !== null && system[key] !== undefined) {\n            merged[key] = system[key];\n            origins[key] = 'system';\n        }\n    }\n    merged.origins = origins;\n    return merged;\n};\n\nconst allMacs = Object.values(deviceMap).filter(val => typeof val === 'string' && val.includes(':'));\n\nfor (const mac of allMacs) {\n    const sensorsForDevice = sensorRules.filter(r => r.mac === mac);\n\n    const roomTempRule = roomRules.find(r => r.mac === mac && r.metric === 'temp') || {};\n    const roomHumRule = roomRules.find(r => r.mac === mac && r.metric === 'hum') || {};\n\n    const overallTempKey = `${mac}|overall|temp`;\n    effectiveMap[overallTempKey] = inherit({}, roomTempRule, systemTempRule);\n\n    const overallHumKey = `${mac}|overall|hum`;\n    effectiveMap[overallHumKey] = inherit({}, roomHumRule, systemHumRule);\n\n    for (const sensorRule of sensorsForDevice) {\n        const key = `${mac}|${sensorRule.sensor_name}|${sensorRule.metric}`;\n        if (sensorRule.metric === 'temp') {\n            effectiveMap[key] = inherit(sensorRule, roomTempRule, systemTempRule);\n        } else if (sensorRule.metric === 'hum') {\n            effectiveMap[key] = inherit(sensorRule, roomHumRule, systemHumRule);\n        }\n    }\n}\n\neffectiveMap['system_temp'] = systemTempRule;\neffectiveMap['system_hum'] = systemHumRule;\n\n// ✨ START: จุดที่แก้ไข/เพิ่มเข้ามา ✨\neffectiveMap['system_connectivity'] = systemConnRule; // เพิ่มบรรทัดนี้\n// ✨ END: จุดที่แก้ไข/เพิ่มเข้ามา ✨\n\nglobal.set('effectiveRuleMap', effectiveMap);\nnode.status({ fill: 'green', shape: 'dot', text: `Loaded ${Object.keys(effectiveMap).length} effective rules` });\n\nreturn null;",
-        "outputs": 0,
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "Load Notification Settings",
+        "func": "// ดึงข้อมูลที่บันทึกไว้ ถ้าไม่มี ให้สร้างข้อมูลเริ่มต้นใน \"โครงสร้างใหม่\" ที่ถูกต้อง\nconst settings = flow.get('notificationSettings') || {\n    recipients: {\n        email: [],\n        telegram: []\n    },\n    schedule: {\n        weekdays: [true, true, true, true, true, true, true],\n        configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n    }\n};\n\nmsg.payload = settings;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2070,
+        "y": 1800,
+        "wires": [
+            [
+                "75fd2cfc955d5334"
+            ]
+        ]
+    },
+    {
+        "id": "75fd2cfc955d5334",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 2260,
+        "y": 1800,
+        "wires": []
+    },
+    {
+        "id": "220c55683d9085e9",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "POST /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1820,
+        "y": 1840,
+        "wires": [
+            [
+                "42c8aaf8e1de6b0d"
+            ]
+        ]
+    },
+    {
+        "id": "42c8aaf8e1de6b0d",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "Validate & Set Defaults",
+        "func": "// msg.payload คือ JSON ที่ UI ส่งมา\nlet payload = msg.payload;\n\n// --- 1. ตรวจสอบ Recipients ---\nif (!payload.recipients) {\n    payload.recipients = { email: [], telegram: [] };\n}\nif (!Array.isArray(payload.recipients.email)) {\n    payload.recipients.email = [];\n}\nif (!Array.isArray(payload.recipients.telegram)) {\n    payload.recipients.telegram = [];\n}\n\n// --- 2. ตรวจสอบ Schedule (โครงสร้างใหม่) ---\nconst defaults = {\n    weekdays: [true, true, true, true, true, true, true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n};\n\nlet schedule = payload.schedule;\nlet isScheduleInvalid = true;\n\n// ตรวจสอบว่า schedule.configs เป็น Array ที่ถูกต้องหรือไม่\nif (schedule && Array.isArray(schedule.weekdays) && schedule.weekdays.length === 7 && Array.isArray(schedule.configs)) {\n    // ถ้าข้อมูลถูกต้อง (อาจจะเป็น Array ว่างก็ได้ ถ้าผู้ใช้ลบหมด)\n    isScheduleInvalid = false;\n}\n\n// ถ้าข้อมูลไม่ถูกต้อง ให้ใช้ค่า Default\nif (isScheduleInvalid) {\n    node.warn(\"Received empty or invalid schedule. Applying default settings.\");\n    payload.schedule = defaults;\n}\n\nmsg.payload = payload;\nreturn msg;",
+        "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2890,
-        "y": 1020,
+        "x": 2080,
+        "y": 1840,
+        "wires": [
+            [
+                "eeb9ed1385b6ba22"
+            ]
+        ]
+    },
+    {
+        "id": "eeb9ed1385b6ba22",
+        "type": "change",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "Save to Flow Context",
+        "rules": [
+            {
+                "t": "set",
+                "p": "notificationSettings",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 2330,
+        "y": 1840,
+        "wires": [
+            [
+                "a248fe30463bd6cc",
+                "f5a678cfebc52a6d"
+            ]
+        ]
+    },
+    {
+        "id": "a248fe30463bd6cc",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 2530,
+        "y": 1840,
         "wires": []
+    },
+    {
+        "id": "ca942ebbfa4b8112",
+        "type": "inject",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "On Deploy",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str",
+                "v": "load_schedule"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 1790,
+        "y": 1880,
+        "wires": [
+            [
+                "f5a678cfebc52a6d"
+            ]
+        ]
+    },
+    {
+        "id": "f5a678cfebc52a6d",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "Update Cron Schedule",
+        "func": "// ตั้งค่าเริ่มต้นกรณีไม่เคยบันทึกจาก UI มาก่อน\nconst DEFAULT_SETTINGS = {\n    recipients: { email: [], telegram: [] },\n    schedule: {\n        weekdays: [true, true, true, true, true, true, true],   // อา..ส\n        configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n    }\n};\n\n// โหลดค่าจาก flow; ถ้าไม่มี หรือโครงสร้างพัง ให้ใช้ค่าเริ่มต้นและบันทึกกลับ\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n    node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n    settings = DEFAULT_SETTINGS;\n    flow.set(\"notificationSettings\", settings);\n}\n\n// daysOfWeek เป็น 0-6 (0=Sunday) ตาม cron\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst daysOfWeekStr = weekdays\n    .map((isSelected, idx) => isSelected ? idx : -1)\n    .filter(idx => idx !== -1)\n    .join(',');\n\n// เคลียร์งานเก่าทิ้งก่อนเสมอ\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ถ้าไม่ได้เลือกวัน หรือไม่มีตารางเวลา ให้ลบงานทั้งหมดแล้วจบ\nif (!daysOfWeekStr || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n    node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n    return [[removeAllMsg], null];\n}\n\n// สร้างงานใหม่ตามแต่ละ config\nconst addMsgs = settings.schedule.configs\n    .filter(cfg => cfg && typeof cfg.sendAt === 'string' && cfg.sendAt.includes(':'))\n    .map((cfg, index) => {\n        const [hour, minute] = cfg.sendAt.split(':').map(s => String(s).trim());\n        const name = `digest-schedule-${index}`;\n        return {\n            payload: {\n                command: \"add\",\n                name,\n                // ใช้ expressionType แทน type\n                expression: `${minute} ${hour} * * ${daysOfWeekStr}`,\n                expressionType: \"cron\",\n                // ส่ง config ทั้งก้อนออกไปตอน trigger\n                payload: cfg,\n                payloadType: \"json\"\n            }\n        };\n    });\n\n\n// ส่งออก: output1 = remove-all, output2 = ชุด add\nreturn [[removeAllMsg], addMsgs];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2000,
+        "y": 1880,
+        "wires": [
+            [
+                "bfe523d9b3554062"
+            ],
+            [
+                "bfe523d9b3554062"
+            ]
+        ]
+    },
+    {
+        "id": "c8779351db8dacf4",
+        "type": "comment",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "สำหรับ Daily Report",
+        "info": "",
+        "x": 1790,
+        "y": 1760,
+        "wires": []
+    },
+    {
+        "id": "bfe523d9b3554062",
+        "type": "cronplus",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "fcd977efd26f7784",
+        "name": "Daily Digest Scheduler",
+        "outputField": "payload",
+        "timeZone": "",
+        "storeName": "",
+        "commandResponseMsgOutput": "output2",
+        "defaultLocation": "",
+        "defaultLocationType": "default",
+        "outputs": 2,
+        "options": [],
+        "x": 2280,
+        "y": 1880,
+        "wires": [
+            [],
+            []
+        ]
     },
     {
         "id": "8301192ec347dbc9",
