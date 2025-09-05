@@ -4922,11 +4922,16 @@
             function resetDetailModalUI(roomId) {
                 console.log(`[UI Reset] Resetting detail modal for offline room: ${roomId}`);
                 const modal = document.getElementById('modal-room-detail');
-                if (!modal || modal.dataset.currentRoom !== roomId) return;
+                // ตรวจสอบอีกครั้งว่า modal เปิดอยู่สำหรับห้องที่ถูกต้องหรือไม่
+                if (!modal || modal.classList.contains('hidden') || modal.dataset.currentRoom !== roomId) {
+                    return;
+                }
 
+                // 1. เปลี่ยนไฟ LED เป็นสีแดง
                 const statusLed = document.getElementById('detail-room-status-led');
                 if (statusLed) setLed(statusLed, 'led--red');
 
+                // 2. ล้างค่า Key Indicators ทั้งหมด
                 const kpiIds = [
                     'kpi-temp-min', 'kpi-temp-avg', 'kpi-temp-max',
                     'kpi-rh-min', 'kpi-rh-avg', 'kpi-rh-max', 'kpi-dew-avg'
@@ -4936,6 +4941,7 @@
                     if (el) el.textContent = '—';
                 });
 
+                // 3. รีเซ็ตกราฟ Uptime
                 const uptimePctEl = document.getElementById('detail-uptime-pct');
                 if (uptimePctEl) uptimePctEl.textContent = '— %';
                 const uptimeChart = window._uptimeCharts ? window._uptimeCharts['detail-uptime-chart-canvas'] : null;
@@ -4945,11 +4951,13 @@
                     uptimeChart.update('none');
                 }
 
+                // 4. แสดงข้อความว่า "Device is offline" ในส่วนของ Sensor List
                 const sensorList = document.getElementById('detail-sensor-list');
                 if (sensorList) {
                     sensorList.innerHTML = '<li class="text-center text-[var(--muted)] mt-4">Device is offline</li>';
                 }
 
+                // 5. ล้างข้อมูลกราฟหลัก (อุณหภูมิและความชื้น)
                 if (window._detailCharts) {
                     if (window._detailCharts.temp) {
                         window._detailCharts.temp.data.datasets = [];
@@ -4961,6 +4969,7 @@
                     }
                 }
 
+                // 6. ปิดการใช้งานปุ่มที่ไม่สามารถใช้ได้ตอน Offline
                 const btnIdsToDisable = ['detail-btn-reboot', 'detail-btn-settings', 'open-pin-map'];
                 btnIdsToDisable.forEach(id => {
                     const btn = document.getElementById(id);
