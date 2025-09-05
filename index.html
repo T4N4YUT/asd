@@ -3302,6 +3302,7 @@
                     return 'Invalid Date';
                 }
             }
+
             function buildLifecycleTooltipHTML(row, currentTab) {
                 const opened = fmtDate(row.opened_at);
                 const acked = fmtDate(row.ack_at);
@@ -4328,7 +4329,7 @@
             }
             console.table(window.MAC_TO_ROOM_MAP);
             window._roomTimeouts = {};
-            const ROOM_TIMEOUT_MS = 120000;
+            const ROOM_TIMEOUT_MS = 80000;
             window.RoomStore = {
                 'room-a': { selectedPin: 'OVERALL', sensors: {} },
                 'room-b': { selectedPin: 'OVERALL', sensors: {} },
@@ -4918,6 +4919,54 @@
                     if (pingTime) pingTime.classList.add('hidden');
                 }
             }
+            function resetDetailModalUI(roomId) {
+                console.log(`[UI Reset] Resetting detail modal for offline room: ${roomId}`);
+                const modal = document.getElementById('modal-room-detail');
+                if (!modal || modal.dataset.currentRoom !== roomId) return;
+
+                const statusLed = document.getElementById('detail-room-status-led');
+                if (statusLed) setLed(statusLed, 'led--red');
+
+                const kpiIds = [
+                    'kpi-temp-min', 'kpi-temp-avg', 'kpi-temp-max',
+                    'kpi-rh-min', 'kpi-rh-avg', 'kpi-rh-max', 'kpi-dew-avg'
+                ];
+                kpiIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = '—';
+                });
+
+                const uptimePctEl = document.getElementById('detail-uptime-pct');
+                if (uptimePctEl) uptimePctEl.textContent = '— %';
+                const uptimeChart = window._uptimeCharts ? window._uptimeCharts['detail-uptime-chart-canvas'] : null;
+                if (uptimeChart) {
+                    uptimeChart.data.datasets[0].data = [];
+                    uptimeChart.options.plugins.uptimeLabel.text = 'Offline';
+                    uptimeChart.update('none');
+                }
+
+                const sensorList = document.getElementById('detail-sensor-list');
+                if (sensorList) {
+                    sensorList.innerHTML = '<li class="text-center text-[var(--muted)] mt-4">Device is offline</li>';
+                }
+
+                if (window._detailCharts) {
+                    if (window._detailCharts.temp) {
+                        window._detailCharts.temp.data.datasets = [];
+                        window._detailCharts.temp.update('none');
+                    }
+                    if (window._detailCharts.rh) {
+                        window._detailCharts.rh.data.datasets = [];
+                        window._detailCharts.rh.update('none');
+                    }
+                }
+
+                const btnIdsToDisable = ['detail-btn-reboot', 'detail-btn-settings', 'open-pin-map'];
+                btnIdsToDisable.forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.disabled = true;
+                });
+            }
             function resetRoomUI(roomId) {
                 console.warn(`[Offline] No data for ${roomId} in ${ROOM_TIMEOUT_MS / 1000}s. Setting UI to offline.`);
                 if (window.roomDataStore && window.roomDataStore[roomId]) {
@@ -4931,12 +4980,10 @@
                 }
                 const updatedEl = document.getElementById(`updated-${roomId}`);
                 if (updatedEl) {
-                    updatedEl.textContent = '';
+                    updatedEl.textContent = 'Offline';
                 }
-                const tempValEl = document.getElementById(`temp-${roomId}`);
-                const rhValEl = document.getElementById(`rh-${roomId}`);
-                const tempCard = tempValEl?.closest('.metric-card');
-                const rhCard = rhValEl?.closest('.metric-card');
+                const tempCard = document.getElementById(`temp-${roomId}`)?.closest('.metric-card');
+                const rhCard = document.getElementById(`rh-${roomId}`)?.closest('.metric-card');
                 if (tempCard) {
                     const valueEl = tempCard.querySelector('.metric-value');
                     const statusEl = tempCard.querySelector('.metric-status');
@@ -4952,6 +4999,11 @@
                     rhCard.className = 'metric-card rounded-xl shadow p-4 bg-gradient-to-r from-slate-500 to-slate-600 text-white text-center flex flex-col justify-center';
                 }
                 setRoomCardsBlank(roomId, true);
+                const detailModal = document.getElementById('modal-room-detail');
+                if (detailModal && !detailModal.classList.contains('hidden') && detailModal.dataset.currentRoom === roomId) {
+                    console.log(`[UI Reset] Forcing detail modal update for offline room: ${roomId}`);
+                    resetDetailModalUI(roomId);
+                }
             }
             function pushHistorySample(roomId, sample) {
                 if (!window.roomDataStore) {
@@ -5654,6 +5706,13 @@
                 if (statusLed && statusClass) {
                     setLed(statusLed, statusClass);
                 }
+                if (statusClass === 'led--green') {
+                    const btnIdsToEnable = ['detail-btn-reboot', 'detail-btn-settings', 'open-pin-map'];
+                    btnIdsToEnable.forEach(id => {
+                        const btn = document.getElementById(id);
+                        if (btn) btn.disabled = false;
+                    });
+                }
                 updateDetailKPIs(roomData.history);
                 updateSensorList(roomData.live, roomId);
             }
@@ -5947,9 +6006,7 @@
                     showPopup(`Could not get latest value from ${finalName}, fallback to last saved value`, { type: 'warn' });
                 }
                 const roomData = window.roomDataStore[roomId];
-                if (roomData) {
-                    updateAllDetailUI(roomData);
-                }
+                updateAllDetailUI(roomData);
                 const now = new Date().toISOString();
                 const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
                 setDefault24hRange();
@@ -6362,27 +6419,38 @@
                             const metricMap = {
                                 temp: 'Temperature',
                                 hum: 'Humidity',
-                                connectivity: 'Device Status'
+                                connectivity: 'Device Status',
+                                sensor_connectivity: 'Sensor Status'
                             };
                             const metricText = metricMap[data.metric] || data.metric;
+
                             if (data.type === 'triggered') {
                                 const level = data.level;
                                 const toastType = level === 'critical' ? 'fail' : 'warn';
                                 let message = '';
+                                const sensorName = data.sensor_name || 'Unknown Sensor';
+
                                 if (data.metric === 'connectivity') {
-                                    message = `${level.toUpperCase()} on ${roomName}: Device is now Offline.`;
+                                    message = `${level.toUpperCase()} in ${roomName}: Device is now Offline.`;
+                                } else if (data.metric === 'sensor_connectivity') {
+                                    message = `${level.toUpperCase()} in ${roomName}: Sensor '${sensorName}' is now Offline.`;
                                 } else {
                                     const value = Number(data.value).toFixed(1);
                                     const unit = data.metric === 'temp' ? '°C' : '%';
-                                    message = `${level.toUpperCase()} on ${roomName}: ${metricText} is ${value}${unit}.`;
+                                    message = `${level.toUpperCase()} in ${roomName}: ${sensorName} ${metricText} is ${value}${unit}.`;
                                 }
                                 showPopup(message, { type: toastType, timeout: 10000 });
+
                             } else if (data.type === 'recovered') {
                                 let message = '';
+                                const sensorName = data.sensor_name || 'Unknown Sensor';
+
                                 if (data.metric === 'connectivity') {
-                                    message = `Recovery on ${roomName}: Device is back online.`;
+                                    message = `Recovery in ${roomName}: Device is back online.`;
+                                } else if (data.metric === 'sensor_connectivity') {
+                                    message = `Recovery in ${roomName}: Sensor '${sensorName}' is back online.`;
                                 } else {
-                                    message = `Recovery on ${roomName}: ${metricText} is back to normal.`;
+                                    message = `Recovery in ${roomName}: ${sensorName} ${metricText} is back to normal.`;
                                 }
                                 showPopup(message, { type: 'success', timeout: 7000 });
                             }
@@ -6430,6 +6498,12 @@
                         updateAlertCards(data);
                         return;
                     }
+                    if (window._roomTimeouts[roomId]) {
+                        clearTimeout(window._roomTimeouts[roomId]);
+                    }
+                    window._roomTimeouts[roomId] = setTimeout(() => {
+                        resetRoomUI(roomId);
+                    }, ROOM_TIMEOUT_MS);
                     if (!window.roomDataStore[roomId]) {
                         window.roomDataStore[roomId] = { history: [], live: {} };
                     }
@@ -6439,6 +6513,16 @@
                     if (pinVal === 'OVERALL') {
                         updateRoomUI(roomId, data);
                         pushHistorySample(roomId, data);
+                        const detailModal = document.getElementById('modal-room-detail');
+                        const detailRoomNameEl = document.getElementById('detail-room-name');
+                        const isDetailModalOpenForThisRoom =
+                            detailModal &&
+                            !detailModal.classList.contains('hidden') &&
+                            detailRoomNameEl?.dataset.currentRoom === roomId;
+                        if (isDetailModalOpenForThisRoom) {
+                            console.log(`[Real-time Update] Refreshing open detail modal for ${roomId}`);
+                            updateAllDetailUI(store);
+                        }
                         const last = store.history.length ? store.history[store.history.length - 1] : {};
                         const newHistoryEntry = {
                             timestamp: data.timestamp,
@@ -6459,8 +6543,6 @@
                         };
                         store.history.push(newHistoryEntry);
                         if (store.history.length > 100) store.history.shift();
-                        const detailModal = document.getElementById('modal-room-detail');
-                        const detailRoomNameEl = document.getElementById('detail-room-name');
                         if (detailModal && !detailModal.classList.contains('hidden') && detailRoomNameEl?.dataset.currentRoom === roomId) {
                             if (window.chartApiData && newHistoryEntry) window.chartApiData.push(newHistoryEntry);
                             feedChartsFromRows(window.chartApiData, false);
@@ -6783,23 +6865,36 @@
             function applyFilters() {
                 const searchTerm = searchInput.value.toLowerCase();
                 const level = levelSelect.value;
+                const metricMap = {
+                    temp: 'Temperature',
+                    hum: 'Humidity',
+                    connectivity: 'Connectivity',
+                    sensor_connectivity: 'Sensor Connectivity'
+                };
+
                 const filteredAlerts = allAlertsCache.filter(alert => {
                     const pinMap = window.MAC_PIN_NAMES?.[alert.mac] || {};
                     const customSensorName = pinMap[`name_pin_${alert.sensor_name}`] || alert.sensor_name;
+                    const displayMetric = (metricMap[alert.metric] || alert.metric).toLowerCase();
+
                     const inSearch = searchTerm === '' ||
                         (alert.opened_at?.toLowerCase().includes(searchTerm)) ||
                         (alert.room_name?.toLowerCase().includes(searchTerm)) ||
                         (customSensorName.toLowerCase().includes(searchTerm)) ||
                         (alert.metric?.toLowerCase().includes(searchTerm)) ||
+                        (displayMetric.includes(searchTerm)) ||
                         (alert.level?.toLowerCase().includes(searchTerm)) ||
                         String(alert.trigger_value).toLowerCase().includes(searchTerm) ||
                         (alert.status?.toLowerCase().includes(searchTerm)) ||
                         (alert.ack_by?.toLowerCase().includes(searchTerm)) ||
                         (alert.ack_note?.toLowerCase().includes(searchTerm)) ||
                         (alert.mac?.toLowerCase().includes(searchTerm));
+
                     const inLevel = level === '' || alert.level === level;
+
                     return inSearch && inLevel;
                 });
+
                 renderAlertTable(filteredAlerts);
             }
             function renderAlertTable(alerts) {
@@ -6815,7 +6910,8 @@
                 const metricMap = {
                     temp: 'Temperature',
                     hum: 'Humidity',
-                    connectivity: 'Connectivity'
+                    connectivity: 'Connectivity',
+                    sensor_connectivity: 'Sensor Connectivity'
                 };
                 alerts.forEach(alert => {
                     const row = document.createElement('tr');
