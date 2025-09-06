@@ -428,8 +428,7 @@
             "ae3aa6d1a10c043e",
             "636d2940b0ca4e78",
             "cacb1e585749c38b",
-            "6c05f5d1fd3fc7c0",
-            "d1b0a1c3da91e3c6"
+            "6c05f5d1fd3fc7c0"
         ],
         "x": 2548,
         "y": 439,
@@ -633,15 +632,13 @@
             "2856459866b453a6",
             "980e30697c2aab77",
             "b86f5c06d6692e5c",
-            "c7f125caa48b240c",
-            "96f558ac37e73c8c",
             "e43561653a2a4834",
-            "246c8e40ce7babbb"
+            "1af88c9d1185d6d0"
         ],
-        "x": 1634,
+        "x": 1568,
         "y": 1239,
-        "w": 942,
-        "h": 202
+        "w": 1024,
+        "h": 408
     },
     {
         "id": "3c7c28232df10c32",
@@ -668,6 +665,32 @@
         "h": 222
     },
     {
+        "id": "a458eed66168ebd9",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "name": "สำหรับ Daily Report",
+        "style": {
+            "stroke": "#ff0000",
+            "fill": "#ffbfbf",
+            "label": false
+        },
+        "nodes": [
+            "5bfb3f67016d19eb",
+            "d414e3a7f5a2f983",
+            "5788b88cf52f700d",
+            "7cd70d1e11624516",
+            "7208aa13555542f1",
+            "1fef58bcc9b577a2",
+            "531052887eaa79ae",
+            "b4bd5f3d781bf26c",
+            "d12975fb6b8b5eb7"
+        ],
+        "x": 2336.0078125,
+        "y": 2643.5078125,
+        "w": 1044,
+        "h": 408
+    },
+    {
         "id": "f11085f09044723f",
         "type": "group",
         "z": "640c6734fdac3595",
@@ -689,6 +712,60 @@
         "y": 739,
         "w": 452,
         "h": 182
+    },
+    {
+        "id": "1af88c9d1185d6d0",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "g": "764e306119ec0e9d",
+        "name": "",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "dffe9683111bd2bf",
+            "96f558ac37e73c8c",
+            "c7f125caa48b240c",
+            "246c8e40ce7babbb",
+            "6d49eebc87817fad",
+            "c0de5b969db8c66c",
+            "66d954ac3dd73111",
+            "065747965f653d21",
+            "d2e3f4a5.b6c7d8",
+            "c1a2b3d4.e5f6g7",
+            "37327e22131dff6d"
+        ],
+        "x": 1594,
+        "y": 1399,
+        "w": 972,
+        "h": 222
+    },
+    {
+        "id": "d12975fb6b8b5eb7",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "g": "a458eed66168ebd9",
+        "name": "",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "2ecd8c26ec376a87",
+            "46f06d723f785f42",
+            "3546e931dff974db",
+            "8c0f35a54b9363f3",
+            "d6f22178be929054",
+            "d0f2e95df4932080",
+            "73b0bea968b59465",
+            "ba4bd39afea7ee55",
+            "c0c54f2542b4b7f1",
+            "bdd9bd5801646f99",
+            "c7359b2c933815d9"
+        ],
+        "x": 2362.0078125,
+        "y": 2803.5078125,
+        "w": 992,
+        "h": 222
     },
     {
         "id": "e06d098d363668d7",
@@ -825,7 +902,7 @@
         "z": "640c6734fdac3595",
         "g": "ba826875d50440fd",
         "name": "Insert to dht22",
-        "func": "\nlet d = msg.payload;\n\nif (!d.mac || !d.timestamp) {\n    node.error(\"❌ Missing mac or timestamp\", d);\n    return null;\n}\n\nmsg.topic = \"INSERT INTO `dht_22` (mac, pin, timestamp, min_temp, max_temp, avg_temp, min_hum, max_hum, avg_hum, temp_status,hum_status) VALUES (?,?,?,?,?,?,?,?,?,?,?);\";\n\nmsg.payload = [\n    d.mac,\n    d.pin,\n    d.timestamp,\n    d.min_temp,\n    d.max_temp,\n    d.avg_temp,\n    d.min_hum,\n    d.max_hum,\n    d.avg_hum,\n    d.temp_status,\n    d.hum_status\n];\n\nreturn msg;\n",
+        "func": "\nlet d = msg.payload;\n\nif (!d.mac || !d.timestamp) {\n    node.error(\"❌ Missing mac or timestamp\", d);\n    return null;\n}\n\nmsg.topic = \"INSERT INTO `dht_22` (mac, pin, timestamp, min_temp, max_temp, avg_temp, min_hum, max_hum, avg_hum) VALUES (?,?,?,?,?,?,?,?,?);\";\n\nmsg.payload = [\n    d.mac,\n    d.pin,\n    d.timestamp,\n    d.min_temp,\n    d.max_temp,\n    d.avg_temp,\n    d.min_hum,\n    d.max_hum,\n    d.avg_hum\n];\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -867,7 +944,7 @@
         "z": "640c6734fdac3595",
         "g": "ba826875d50440fd",
         "name": "Send status",
-        "func": "// ✨ FIX: รับค่า MAC จาก DB และส่งต่อไปใน payload\nlet seen = Array.isArray(msg.payload) ? msg.payload : [];\nlet now = new Date();\n\n// จัดกลุ่มข้อมูลตาม MAC Address\nconst seenByMac = seen.reduce((acc, curr) => {\n    const mac = curr.mac;\n    if (!acc[mac]) {\n        acc[mac] = [];\n    }\n    acc[mac].push(curr);\n    return acc;\n}, {});\n\n\nlet allResults = [];\n\n// วนลูปตามแต่ละ MAC ที่เจอ\nfor (const mac in seenByMac) {\n    const pinsForMac = seenByMac[mac];\n    let expected = [\"25\", \"26\", \"32\", \"33\"];\n\n    let result = expected.map(pin => {\n        let found = pinsForMac.find(r => r.pin == pin);\n\n        if (!found || !found.last_seen) {\n            return { mac: mac, pin: pin, status: \"OFFLINE\", last_seen: null };\n        }\n\n        let last = new Date(found.last_seen);\n        if (isNaN(last)) {\n            return { mac: mac, pin: pin, status: \"OFFLINE\", last_seen: found.last_seen };\n        }\n\n        // เช็คว่าข้อมูลล่าสุดขาดหายไปเกิน 20 วินาทีหรือไม่\n        let diffSeconds = (now.getTime() - last.getTime()) / 1000;\n        return {\n            mac: mac,\n            pin: pin,\n            last_seen: found.last_seen,\n            status: diffSeconds > 20 ? \"OFFLINE\" : \"ONLINE\"\n        };\n    });\n    allResults = allResults.concat(result);\n}\n\n\nmsg.payload = allResults;\nmsg.topic = 'pin_status_update';\nreturn msg;",
+        "func": "// ✨ FIX: รับค่า MAC จาก DB และส่งต่อไปใน payload\nlet seen = Array.isArray(msg.payload) ? msg.payload : [];\nlet now = new Date();\n\n// จัดกลุ่มข้อมูลตาม MAC Address\nconst seenByMac = seen.reduce((acc, curr) => {\n    const mac = curr.mac;\n    if (!acc[mac]) {\n        acc[mac] = [];\n    }\n    acc[mac].push(curr);\n    return acc;\n}, {});\n\n\nlet allResults = [];\n\n// วนลูปตามแต่ละ MAC ที่เจอ\nfor (const mac in seenByMac) {\n    const pinsForMac = seenByMac[mac];\n    let expected = [\"25\", \"26\", \"32\", \"33\"];\n\n    let result = expected.map(pin => {\n        let found = pinsForMac.find(r => r.pin == pin);\n\n        if (!found || !found.last_seen) {\n            return { mac: mac, pin: pin, status: \"OFFLINE\", last_seen: null };\n        }\n\n        let last = new Date(found.last_seen);\n        if (isNaN(last)) {\n            return { mac: mac, pin: pin, status: \"OFFLINE\", last_seen: found.last_seen };\n        }\n\n        // เช็คว่าข้อมูลล่าสุดขาดหายไปเกิน 20 วินาทีหรือไม่\n        let diffSeconds = (now.getTime() - last.getTime()) / 1000;\n        return {\n            mac: mac,\n            pin: pin,\n            last_seen: found.last_seen,\n            status: diffSeconds > 120 ? \"OFFLINE\" : \"ONLINE\"\n        };\n    });\n    allResults = allResults.concat(result);\n}\n\n\nmsg.payload = allResults;\nmsg.topic = 'pin_status_update';\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -2988,25 +3065,6 @@
         ]
     },
     {
-        "id": "d1b0a1c3da91e3c6",
-        "type": "mqtt out",
-        "z": "640c6734fdac3595",
-        "g": "3405bc2648d0e0c4",
-        "name": "Send rules to device",
-        "topic": "",
-        "qos": "1",
-        "retain": "",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "8301192ec347dbc9",
-        "x": 3260,
-        "y": 880,
-        "wires": []
-    },
-    {
         "id": "31093562cb7659a0",
         "type": "http in",
         "z": "640c6734fdac3595",
@@ -3241,7 +3299,7 @@
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 1780,
+        "x": 1740,
         "y": 1320,
         "wires": [
             [
@@ -3262,7 +3320,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2030,
+        "x": 1990,
         "y": 1320,
         "wires": [
             [
@@ -3280,7 +3338,7 @@
         "headers": {
             "content-type": "application/json"
         },
-        "x": 2220,
+        "x": 2180,
         "y": 1320,
         "wires": []
     },
@@ -3294,7 +3352,7 @@
         "method": "post",
         "upload": false,
         "swaggerDoc": "",
-        "x": 1780,
+        "x": 1740,
         "y": 1360,
         "wires": [
             [
@@ -3315,7 +3373,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2040,
+        "x": 2000,
         "y": 1360,
         "wires": [
             [
@@ -3343,7 +3401,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 2290,
+        "x": 2250,
         "y": 1360,
         "wires": [
             [
@@ -3360,7 +3418,7 @@
         "name": "200 OK",
         "statusCode": "200",
         "headers": {},
-        "x": 2490,
+        "x": 2450,
         "y": 1360,
         "wires": []
     },
@@ -3368,7 +3426,7 @@
         "id": "c7f125caa48b240c",
         "type": "inject",
         "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
+        "g": "1af88c9d1185d6d0",
         "name": "On Deploy",
         "props": [
             {
@@ -3387,8 +3445,8 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 1750,
-        "y": 1400,
+        "x": 1710,
+        "y": 1440,
         "wires": [
             [
                 "96f558ac37e73c8c"
@@ -3399,7 +3457,7 @@
         "id": "96f558ac37e73c8c",
         "type": "function",
         "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
+        "g": "1af88c9d1185d6d0",
         "name": "Update Cron Schedule",
         "func": "// Update Cron Schedule (patched)\n// สร้าง/ลบ schedule ใน cronplus ให้ยิงตาม UI settings\nconst DEFAULT_SETTINGS = {\n  recipients: { email: [], telegram: [] },\n  schedule: {\n    weekdays: [true,true,true,true,true,true,true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n  }\n};\n\n// โหลดค่า config\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n  node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n  settings = DEFAULT_SETTINGS;\n  flow.set(\"notificationSettings\", settings);\n}\n\n// วันในสัปดาห์ (0=Sun..6=Sat)\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst selectedDOW = weekdays\n  .map((isOn, idx) => isOn ? idx : -1)\n  .filter(v => v !== -1);\n\n// เคลียร์งานเก่าก่อน\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ไม่มีวันหรือไม่มีตารางเวลา → ลบแล้วจบ\nif (selectedDOW.length === 0 || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n  node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n  return [[removeAllMsg], null];\n}\n\n// ทำ string DOW\nconst daysOfWeekStr = selectedDOW.join(',');\n\n// timeZone ที่จะใช้ทั้งใน node และในคำสั่ง\nconst TZ = \"Asia/Bangkok\";\n\n// สร้าง job ใหม่ตามแต่ละ config\nconst crypto = (s)=> {\n  // แฮชจิ๋วกันชื่อชน (ไม่ต้องเอาจริงจัง)\n  let h = 0; for (let i=0;i<s.length;i++) h = ((h<<5)-h) + s.charCodeAt(i) | 0;\n  return Math.abs(h).toString(36).slice(0,5);\n};\n\nconst addMsgs = settings.schedule.configs\n  .filter(cfg => cfg && typeof cfg.sendAt === \"string\" && cfg.sendAt.includes(\":\"))\n  .map((cfg) => {\n    const [hourStr, minuteStr] = cfg.sendAt.split(\":\").map(s => String(s).trim());\n    const hour = String(parseInt(hourStr, 10));\n    const minute = String(parseInt(minuteStr, 10));\n\n    // cron 6 ฟิลด์: sec min hour dom month dow\n    const expression = `0 ${minute} ${hour} * * ${daysOfWeekStr}`;\n\n    // ทำชื่อ job ให้คงที่แต่ไม่ชนกันง่าย\n    const sig = `${hour}:${minute}|${daysOfWeekStr}|${cfg.rangeStart||''}-${cfg.rangeEnd||''}`;\n    const name = `digest-${crypto(sig)}`;\n\n    return {\n      payload: {\n        command: \"add\",\n        name,\n        expressionType: \"cron\",\n        expression,\n        timeZone: TZ,\n        // payload ที่ปล่อยตอนถึงเวลา ให้พก cfg ออกไปด้วย\n        payload: {\n          kind: \"daily-digest-trigger\",\n          schedule: { ...cfg, daysOfWeekStr, timeZone: TZ }\n        },\n        payloadType: \"json\"\n      }\n    };\n  });\n\n// ส่งออก: output1 = remove-all, output2 = add ทั้งหมด\nreturn [[removeAllMsg], addMsgs];\n",
         "outputs": 2,
@@ -3408,8 +3466,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1960,
-        "y": 1400,
+        "x": 1920,
+        "y": 1440,
         "wires": [
             [
                 "246c8e40ce7babbb"
@@ -3426,7 +3484,7 @@
         "g": "764e306119ec0e9d",
         "name": "สำหรับ Daily Report",
         "info": "",
-        "x": 1750,
+        "x": 1710,
         "y": 1280,
         "wires": []
     },
@@ -3466,7 +3524,7 @@
         "id": "246c8e40ce7babbb",
         "type": "cronplus",
         "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
+        "g": "1af88c9d1185d6d0",
         "name": "Daily Digest Scheduler",
         "outputField": "payload",
         "timeZone": "Asia/Bangkok",
@@ -3476,8 +3534,8 @@
         "defaultLocationType": "default",
         "outputs": 2,
         "options": [],
-        "x": 2240,
-        "y": 1400,
+        "x": 2200,
+        "y": 1440,
         "wires": [
             [
                 "c0de5b969db8c66c"
@@ -3600,8 +3658,8 @@
         "z": "640c6734fdac3595",
         "g": "3c7c28232df10c32",
         "name": "Check Status",
-        "func": "// --- ส่วนตั้งค่าอุปกรณ์ ---\n// เพิ่มอุปกรณ์ทั้งหมดที่ต้องการตรวจสอบในนี้\n// key คือ MAC Address, value คือ IP Address และชื่อห้อง\nconst deviceConfig = {\n    '94:B9:7E:CE:01:EF': { ip: '192.168.42.30', room: 'Server Room 1' }\n    // ตัวอย่างการเพิ่มอุปกรณ์ตัวที่สอง\n    // 'AA:BB:CC:DD:EE:FF': { ip: '192.168.42.31', room: 'Living Room' }\n};\n\n// --- ตัวแปร Global ---\n// ดึงข้อมูลสถานะล่าสุดของอุปกรณ์ทั้งหมดที่เก็บไว้\nlet states = flow.get('deviceStates') || {};\nconst MQTT_TIMEOUT_MS = 21000; // 21 วินาที: ถ้าไม่ได้รับ MQTT เกินเวลานี้ = ออฟไลน์\n\n// --- สร้าง Map สำหรับค้นหา MAC Address จาก IP ---\nconst ipToMacMap = {};\nfor (const mac in deviceConfig) {\n    ipToMacMap[deviceConfig[mac].ip] = mac;\n}\n\n// --- ฟังก์ชันช่วยเหลือ ---\nfunction now() { return Date.now(); }\n\nfunction normalizeMac(s) {\n    if (!s) return null;\n    s = String(s).toUpperCase().replace(/[^0-9A-F]/g, '');\n    if (s.length !== 12) return null;\n    return s.match(/.{2}/g).join(':');\n}\n\n// --- Logic หลัก ---\nlet mac = null;\nlet sourceType = null;\n\n// ตรวจสอบว่าข้อความมาจาก Ping หรือ MQTT\nif (msg.topic && ipToMacMap[msg.topic]) {\n    sourceType = \"Ping\";\n    mac = ipToMacMap[msg.topic];\n} else if (msg.topic && msg.topic.startsWith('esp32/')) {\n    sourceType = \"MQTT\";\n    // ลองดึง MAC จาก payload ก่อน\n    mac = normalizeMac(msg.payload && msg.payload.mac);\n    // ถ้าไม่มีใน payload ให้ดึงจาก topic\n    if (!mac) {\n        const parts = msg.topic.split('/');\n        if (parts.length >= 2) {\n            mac = normalizeMac(parts[1]);\n        }\n    }\n}\n\n// ถ้าหา MAC ไม่เจอ ไม่ต้องทำอะไรต่อ\nif (!mac || !deviceConfig[mac]) {\n    node.warn(`Could not determine MAC or device not in config. Topic: ${msg.topic}`);\n    return null;\n}\n\n// ถ้าเป็นอุปกรณ์ใหม่ ให้สร้าง state เริ่มต้น\nif (!states[mac]) {\n    states[mac] = {\n        pingOk: false,\n        mqttOk: false,\n        lastCombinedState: 'offline',\n        ping_ms: null,\n        lastMqttTs: 0\n    };\n}\n\n// เก็บสถานะเก่าไว้เปรียบเทียบ\nconst oldState = { ...states[mac] };\nconst deviceState = states[mac];\n\n// อัปเดตสถานะตามแหล่งที่มาของข้อมูล\nif (sourceType === \"MQTT\") {\n    const statusPayload = (msg.payload && msg.payload.status || '').toString().toLowerCase();\n    deviceState.mqttOk = (statusPayload === 'online');\n    deviceState.lastMqttTs = now(); // บันทึกเวลาที่ได้รับ MQTT ล่าสุด\n} else { // sourceType === \"Ping\"\n    deviceState.pingOk = (msg.payload !== false);\n    deviceState.ping_ms = (msg.payload !== false) ? Number(msg.payload) : oldState.ping_ms;\n}\n\n// ตรวจสอบ MQTT Timeout ทุกครั้ง ไม่ว่าจะได้รับข้อมูลจากไหน\n// ถ้าไม่ได้รับ MQTT มานานเกินกำหนด ให้ถือว่า mqttOk เป็น false\nif ((now() - deviceState.lastMqttTs) > MQTT_TIMEOUT_MS) {\n    deviceState.mqttOk = false;\n}\n\n// สรุปสถานะสุดท้ายของอุปกรณ์: ต้องเป็นจริงทั้งคู่ถึงจะ 'online'\nconst newCombinedState = (deviceState.pingOk && deviceState.mqttOk) ? 'online' : 'offline';\n\n// ตรวจสอบว่าสถานะมีการเปลี่ยนแปลงหรือไม่\nif (newCombinedState !== oldState.lastCombinedState) {\n    deviceState.lastCombinedState = newCombinedState;\n    flow.set('deviceStates', states); // บันทึกสถานะล่าสุดกลับเข้าไป\n\n    // ส่งข้อมูลออกไปเมื่อสถานะเปลี่ยนเท่านั้น\n    return {\n        payload: {\n            mac: mac,\n            room: deviceConfig[mac].room,\n            status: newCombinedState,\n            ping_ms: deviceState.ping_ms,\n            event_time: new Date().toISOString(),\n            pin: \"OVERALL\"\n        }\n    };\n}\n\n// ถ้าสถานะไม่เปลี่ยน ไม่ต้องส่งอะไรออกไป\nreturn null;",
-        "outputs": 1,
+        "func": "// --- ส่วนตั้งค่าอุปกรณ์ ---\nconst deviceConfig = {\n    '94:B9:7E:CE:01:EF': { ip: '192.168.42.30', room: 'Server Room 1' }\n};\n\n// --- ตั้งค่าการหน่วงเวลา ---\nconst OFFLINE_GRACE_PERIOD_MS = 60000;\nconst MQTT_TIMEOUT_MS = 21000;\n\n// --- ตัวแปร Global ---\nlet states = flow.get('deviceStates') || {};\nconst ipToMacMap = {};\nfor (const mac in deviceConfig) {\n    ipToMacMap[deviceConfig[mac].ip] = mac;\n}\n\n// --- ฟังก์ชันช่วยเหลือ ---\nfunction now() { return Date.now(); }\nfunction normalizeMac(s) {\n    if (!s) return null;\n    s = String(s).toUpperCase().replace(/[^0-9A-F]/g, '');\n    if (s.length !== 12) return null;\n    return s.match(/.{2}/g).join(':');\n}\n\n// --- Logic หลัก ---\nlet mac = null;\nlet sourceType = null;\n\nif (msg.topic && ipToMacMap[msg.topic]) {\n    sourceType = \"Ping\";\n    mac = ipToMacMap[msg.topic];\n} else if (msg.topic && msg.topic.startsWith('esp32/')) {\n    sourceType = \"MQTT\";\n    mac = normalizeMac(msg.payload && msg.payload.mac) || normalizeMac(msg.topic.split('/')[1]);\n}\n\nif (!mac || !deviceConfig[mac]) {\n    return null;\n}\n\nif (!states[mac]) {\n    states[mac] = {\n        pingOk: false, mqttOk: false, lastCombinedState: 'offline',\n        ping_ms: null, lastMqttTs: 0, offlineSince: null\n    };\n}\n\nconst oldState = states[mac].lastCombinedState;\nconst deviceState = states[mac];\n\nif (sourceType === \"MQTT\") {\n    deviceState.mqttOk = (msg.payload && msg.payload.status || '').toString().toLowerCase() === 'online';\n    deviceState.lastMqttTs = now();\n} else { // sourceType === \"Ping\"\n    deviceState.pingOk = (msg.payload !== false);\n    deviceState.ping_ms = (msg.payload !== false) ? Number(msg.payload) : deviceState.ping_ms;\n}\n\nif ((now() - deviceState.lastMqttTs) > MQTT_TIMEOUT_MS) {\n    deviceState.mqttOk = false;\n}\n\nconst potentialState = (deviceState.pingOk && deviceState.mqttOk) ? 'online' : 'offline';\nlet statusMsg = null;\nlet configRequestMsg = null; // ✨ Message สำหรับขอ Config\n\nif (potentialState === 'online') {\n    deviceState.offlineSince = null;\n    if (oldState === 'offline') {\n        deviceState.lastCombinedState = 'online';\n        statusMsg = { // Message สำหรับ Output 1\n            payload: {\n                mac: mac, room: deviceConfig[mac].room, status: 'online',\n                ping_ms: deviceState.ping_ms, event_time: new Date().toISOString(), pin: \"OVERALL\"\n            }\n        };\n        // ✨ เมื่อกลับมา Online ให้สร้าง message เพื่อไปขอ Config ด้วย\n        configRequestMsg = { // Message สำหรับ Output 2\n            payload: {\n                command: \"get_config\",\n                mac: mac,\n                // ใส่ requestId เพื่อให้ติดตามได้ง่าย (optional)\n                requestId: `auto-get-${Date.now()}`\n            }\n        };\n    }\n} else { // potentialState === 'offline'\n    if (oldState === 'online') {\n        if (deviceState.offlineSince === null) {\n            deviceState.offlineSince = now();\n        }\n    }\n    if (deviceState.offlineSince && (now() - deviceState.offlineSince > OFFLINE_GRACE_PERIOD_MS) && oldState === 'online') {\n        deviceState.lastCombinedState = 'offline';\n        statusMsg = {\n            payload: {\n                mac: mac, room: deviceConfig[mac].room, status: 'offline',\n                ping_ms: deviceState.ping_ms, event_time: new Date().toISOString(), pin: \"OVERALL\"\n            }\n        };\n    }\n}\n\nflow.set('deviceStates', states);\n\n// ✨ ส่ง message ออก 2 ขา: [output1, output2]\nreturn [statusMsg, configRequestMsg];",
+        "outputs": 2,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
@@ -3614,6 +3672,9 @@
                 "f6bf0c6b76b28ba8",
                 "6889d15e433846c7",
                 "9708f9c81584ae9a"
+            ],
+            [
+                "84de7bd1374c55ed"
             ]
         ]
     },
@@ -3655,16 +3716,17 @@
         "id": "c0de5b969db8c66c",
         "type": "function",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
         "name": "Prepare Daily Report Data",
-        "func": "// รับค่า schedule ที่ cronplus ส่งมา\nconst schedule = msg.payload.schedule || {};\nconst { rangeStart, rangeEnd } = schedule;\n\n// --- Helper Functions ---\n// Helper สำหรับสร้าง Date object ตามเวลาท้องถิ่น\nfunction getLocalTime(timeStr, baseDate) {\n    if (!timeStr) return null;\n    const [hour, minute] = timeStr.split(':');\n    const date = new Date(baseDate);\n    date.setHours(parseInt(hour, 10));\n    date.setMinutes(parseInt(minute, 10));\n    date.setSeconds(0);\n    date.setMilliseconds(0);\n    return date;\n}\n\n// Helper สำหรับแปลง Date object เป็นฟอร์แมตที่ MySQL ต้องการ ('YYYY-MM-DD HH:MM:SS')\nfunction toSqlFormat(date) {\n    const pad = (num) => String(num).padStart(2, '0');\n    const y = date.getFullYear();\n    const m = pad(date.getMonth() + 1);\n    const d = pad(date.getDate());\n    const h = pad(date.getHours());\n    const min = pad(date.getMinutes());\n    const s = pad(date.getSeconds());\n    return `${y}-${m}-${d} ${h}:${min}:${s}`;\n}\n\n// คำนวณช่วงเวลาของ Report\nlet startDate, endDate;\nconst now = new Date();\n\nif (rangeStart > rangeEnd) { // Report แบบข้ามคืน (เช่น 17:00 -> 08:00)\n    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);\n    startDate = getLocalTime(rangeStart, yesterday);\n    endDate = getLocalTime(rangeEnd, now);\n} else { // Report แบบในวันเดียว (เช่น 08:00 -> 13:00)\n    startDate = getLocalTime(rangeStart, now);\n    endDate = getLocalTime(rangeEnd, now);\n}\n\n// แปลงเป็น String Format สำหรับส่งให้ MySQL\nconst start_sql = toSqlFormat(startDate);\nconst end_sql = toSqlFormat(endDate);\n\nif (!start_sql || !end_sql) {\n    node.error(\"Invalid time range in schedule payload\", msg);\n    return null;\n}\n\nconst duration_hours = (endDate.getTime() - startDate.getTime()) / 3600000;\n\n// เก็บข้อมูล report พื้นฐานไว้ใน msg\nmsg.report = {\n    generated_at: now.toISOString(),\n    window: {\n        start_iso: startDate.toISOString(),\n        end_iso: endDate.toISOString(),\n        duration_hours\n    }\n};\n\nconst deviceMap = flow.get('device_map', 'file') || {};\nconst macToRoomName = {};\nfor (const key in deviceMap) {\n    if (key.startsWith('room')) {\n        const mac = deviceMap[key];\n        const roomLetter = key.slice(-1).toUpperCase();\n        macToRoomName[mac] = deviceMap[`name${roomLetter}`] || `Room ${roomLetter}`;\n    }\n}\nconst macs = Object.keys(macToRoomName);\nif (macs.length === 0) {\n    node.warn(\"No devices configured in device_map for reporting.\");\n    return null;\n}\n\n// --- 1. สร้าง SQL สำหรับสรุปข้อมูลห้อง (Sensor Data + Uptime) ---\nconst roomSummarySql = `\nWITH RoomData AS (\n    SELECT mac, AVG(avg_temp) AS temp_avg, MIN(min_temp) AS temp_min, MAX(max_temp) AS temp_max, AVG(avg_hum) AS hum_avg, MIN(min_hum) AS hum_min, MAX(max_hum) AS hum_max\n    FROM dht_22 WHERE timestamp BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')}) GROUP BY mac\n), UptimeData AS (\n    SELECT mac, (SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS uptime_pct\n    FROM esp_status_log WHERE time BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')}) GROUP BY mac\n)\nSELECT r.mac, d.temp_avg, d.temp_min, d.temp_max, d.hum_avg, d.hum_min, d.hum_max, u.uptime_pct\nFROM (SELECT DISTINCT mac FROM dht_22 WHERE mac IN (${macs.map(() => '?').join(',')})) r\nLEFT JOIN RoomData d ON r.mac = d.mac LEFT JOIN UptimeData u ON r.mac = u.mac;\n`;\nconst roomParams = [start_sql, end_sql, ...macs, start_sql, end_sql, ...macs, ...macs];\n\n// --- 2. สร้าง SQL สำหรับดึง Events/Alerts (ปรับปรุงใหม่ V3) ---\nconst eventsSql = `\nSELECT\n    DATE_FORMAT(COALESCE(closed_at, opened_at), '%H:%i') as time,\n    room_name as room,\n    CASE\n        WHEN status IN ('recovery', 'closed') AND metric LIKE '%connectivity' THEN\n            CONCAT(\n                sensor_name, ' กลับมาออนไลน์ (ออฟไลน์นาน ',\n                TIMESTAMPDIFF(MINUTE, opened_at, closed_at),\n                ' นาที)'\n            )\n        WHEN status IN ('open', 'ack') AND metric LIKE '%connectivity' AND trigger_value = 0 THEN\n            CONCAT(sensor_name, ' ออฟไลน์')\n        ELSE\n            CONCAT(\n                sensor_name, ' ',\n                CASE\n                    WHEN metric = 'temp' THEN 'อุณหภูมิ'\n                    WHEN metric = 'hum' THEN 'ความชื้น'\n                    ELSE metric\n                END, ' ',\n                level, ' (', trigger_value, ')'\n            )\n    END as text\nFROM alert_events\nWHERE\n    (\n        status IN ('open', 'ack') OR\n        (status IN ('recovery', 'closed') AND closed_at BETWEEN ? AND ?)\n    )\n    AND opened_at BETWEEN ? AND ?\nORDER BY COALESCE(closed_at, opened_at) ASC;\n`;\nconst eventsParams = [start_sql, end_sql, start_sql, end_sql];\n\n// ส่ง msg ที่มี query ทั้งสองชุดออกไปคนละ output\nreturn [\n    { topic: roomSummarySql, payload: roomParams, report: msg.report, _macToRoomName: macToRoomName, keyName: \"rooms\" },\n    { topic: eventsSql, payload: eventsParams, report: msg.report, keyName: \"events\" }\n];",
+        "func": "// รับค่า schedule ที่ cronplus ส่งมา\nconst schedule = msg.payload.schedule || {};\nconst { rangeStart, rangeEnd } = schedule;\n\n// --- Helpers ---\nfunction getLocalTime(timeStr, baseDate) {\n  if (!timeStr) return null;\n  const [hour, minute] = timeStr.split(':');\n  const date = new Date(baseDate);\n  date.setHours(parseInt(hour, 10));\n  date.setMinutes(parseInt(minute, 10));\n  date.setSeconds(0);\n  date.setMilliseconds(0);\n  return date;\n}\nfunction toSqlFormat(date) {\n  const pad = (n) => String(n).padStart(2, '0');\n  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;\n}\n\n// คำนวณช่วงเวลาของ Report\nlet startDate, endDate;\nconst now = new Date();\n\nif (rangeStart > rangeEnd) { // ข้ามคืน เช่น 17:00 -> 08:00\n  const y = new Date(now.getTime() - 24 * 60 * 60 * 1000);\n  startDate = getLocalTime(rangeStart, y);\n  endDate = getLocalTime(rangeEnd, now);\n} else { // ภายในวันเดียว\n  startDate = getLocalTime(rangeStart, now);\n  endDate = getLocalTime(rangeEnd, now);\n}\nconst start_sql = toSqlFormat(startDate);\nconst end_sql = toSqlFormat(endDate);\nif (!start_sql || !end_sql) { node.error(\"Invalid time range in schedule payload\", msg); return null; }\n\nconst duration_hours = (endDate.getTime() - startDate.getTime()) / 3600000;\nmsg.report = {\n  generated_at: now.toISOString(),\n  window: { start_iso: startDate.toISOString(), end_iso: endDate.toISOString(), duration_hours }\n};\n\n// map MAC -> Room name จาก flow file\nconst deviceMap = flow.get('device_map', 'file') || {};\nconst macToRoomName = {};\nfor (const key in deviceMap) {\n  if (key.startsWith('room')) {\n    const mac = deviceMap[key];\n    const letter = key.slice(-1).toUpperCase();\n    macToRoomName[mac] = deviceMap[`name${letter}`] || `Room ${letter}`;\n  }\n}\nconst macs = Object.keys(macToRoomName);\nif (macs.length === 0) { node.warn(\"No devices configured in device_map for reporting.\"); return null; }\n\n// --- 1) สรุปข้อมูลห้อง (Sensor Data + Uptime) ---\nconst roomSummarySql = `\nWITH RoomData AS (\n  SELECT mac,\n         AVG(avg_temp) AS temp_avg, MIN(min_temp) AS temp_min, MAX(max_temp) AS temp_max,\n         AVG(avg_hum)  AS hum_avg,  MIN(min_hum)  AS hum_min,  MAX(max_hum)  AS hum_max\n  FROM dht_22\n  WHERE timestamp BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')})\n  GROUP BY mac\n), UptimeData AS (\n  SELECT mac, (SUM(CASE WHEN status='online' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS uptime_pct\n  FROM esp_status_log\n  WHERE time BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')})\n  GROUP BY mac\n)\nSELECT r.mac, d.temp_avg, d.temp_min, d.temp_max, d.hum_avg, d.hum_min, d.hum_max, u.uptime_pct\nFROM (SELECT DISTINCT mac FROM dht_22 WHERE mac IN (${macs.map(() => '?').join(',')})) r\nLEFT JOIN RoomData d ON r.mac = d.mac\nLEFT JOIN UptimeData u ON r.mac = u.mac;\n`;\nconst roomParams = [start_sql, end_sql, ...macs, start_sql, end_sql, ...macs, ...macs];\n\n// ===== ตั้งค่าการรวมกลุ่มเหตุการณ์ =====\nconst MERGE_GAP_SEC = Number(flow.get(\"mergeGapSec\")) || 60;  // รวมเหตุการณ์ที่ห่างกันไม่เกิน 60s\nconst MIN_EVENT_SEC = Number(flow.get(\"minEventSec\")) || 1;   // ตัดเหตุการณ์ที่สั้นกว่า 1s ทิ้ง\n\n// --- 2) INCIDENTS: รวมจาก alert_event_log + alert_events แล้ว \"รวมกลุ่ม\" เหตุการณ์ที่ติดกัน ---\nconst eventsSql = `\nWITH\nparams AS (\n  SELECT CAST(? AS DATETIME) AS s, CAST(? AS DATETIME) AS e\n),\nraw AS (\n  /* รวม open/close ต่อ event_id เพื่อได้ opened_at/closed_at ที่แท้จริง */\n  SELECT\n    a.room_name,\n    l.mac,\n    l.sensor_name,\n    CASE\n      WHEN LOWER(l.metric) IN ('temp','temperature') THEN 'temp'\n      WHEN LOWER(l.metric) IN ('hum','humidity')     THEN 'hum'\n      ELSE 'connectivity'\n    END AS kind,\n    MIN(CASE WHEN l.action='open'  THEN l.ts END) AS opened_at,\n    MAX(CASE WHEN l.action='close' THEN l.ts END) AS closed_at,\n    MAX(l.level)  AS level,\n    MAX(l.value)  AS trigger_value\n  FROM alert_event_log l\n  JOIN alert_events a ON a.event_id = l.event_id\n  GROUP BY l.event_id, a.room_name, l.mac, l.sensor_name, kind\n),\ninter AS (\n  /* เอาเฉพาะเหตุการณ์ที่ซ้อนกับช่วงรายงาน */\n  SELECT r.*, p.s, p.e\n  FROM raw r, params p\n  WHERE r.opened_at < p.e AND (r.closed_at IS NULL OR r.closed_at > p.s)\n),\nseg AS (\n  /* ตัดขอบให้พอดีกับหน้าต่างรายงาน */\n  SELECT\n    room_name, mac, sensor_name, kind, level, trigger_value,\n    GREATEST(opened_at, s)           AS seg_start,\n    LEAST(COALESCE(closed_at, e), e) AS seg_end\n  FROM inter\n),\nmarked AS (\n  /* ทำเครื่องหมายขึ้นกลุ่มใหม่เมื่อห่างกันเกิน MERGE_GAP_SEC */\n  SELECT\n    *,\n    LAG(seg_end) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start) AS prev_end,\n    CASE\n      WHEN LAG(seg_end) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start) IS NULL\n        OR TIMESTAMPDIFF(SECOND, LAG(seg_end) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start), seg_start) > ${MERGE_GAP_SEC}\n      THEN 1 ELSE 0\n    END AS is_new_grp\n  FROM seg\n),\ngrp AS (\n  /* คำนวณ running group id */\n  SELECT\n    room_name, mac, sensor_name, kind, level, trigger_value, seg_start, seg_end,\n    SUM(is_new_grp) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start\n      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS grp_id\n  FROM marked\n),\nmerged AS (\n  /* รวมเป็นเหตุการณ์เดียวต่อกลุ่ม */\n  SELECT\n    room_name,\n    sensor_name,\n    kind,\n    MAX(level) AS level,\n    MAX(trigger_value) AS trigger_value,\n    MIN(seg_start) AS grp_start,\n    MAX(seg_end)   AS grp_end,\n    TIMESTAMPDIFF(SECOND, MIN(seg_start), MAX(seg_end))  AS seconds_down,\n    TIMESTAMPDIFF(MINUTE, MIN(seg_start), MAX(seg_end))  AS minutes_down\n  FROM grp\n  GROUP BY room_name, sensor_name, kind, grp_id\n)\nSELECT\n  room_name,\n  sensor_name,\n  level,\n  TIME_FORMAT(grp_start, '%H:%i:%s') AS t_open,\n  CASE WHEN grp_end IS NULL THEN NULL ELSE TIME_FORMAT(grp_end, '%H:%i:%s') END AS t_close,\n  kind,\n  trigger_value,\n  minutes_down,\n  seconds_down\nFROM merged\nWHERE seconds_down >= ${MIN_EVENT_SEC}\nORDER BY grp_start ASC;\n`;\nconst eventsParams = [start_sql, end_sql];\n\n// ส่ง msg สองสายเหมือนเดิม\nreturn [\n  { topic: roomSummarySql, payload: roomParams, report: msg.report, _macToRoomName: macToRoomName, keyName: \"rooms\" },\n  { topic: eventsSql, payload: eventsParams, report: msg.report, keyName: \"events\" }\n];\n",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1760,
-        "y": 1520,
+        "x": 1740,
+        "y": 1500,
         "wires": [
             [
                 "6d49eebc87817fad"
@@ -3678,10 +3740,11 @@
         "id": "6d49eebc87817fad",
         "type": "mysql",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
         "mydb": "5e560f07cfec117a",
         "name": "Query Room Summaries",
-        "x": 2190,
-        "y": 1520,
+        "x": 2010,
+        "y": 1480,
         "wires": [
             [
                 "065747965f653d21"
@@ -3692,10 +3755,11 @@
         "id": "66d954ac3dd73111",
         "type": "mysql",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
         "mydb": "5e560f07cfec117a",
         "name": "Query Events",
-        "x": 2220,
-        "y": 1560,
+        "x": 1980,
+        "y": 1520,
         "wires": [
             [
                 "065747965f653d21"
@@ -3706,16 +3770,17 @@
         "id": "dffe9683111bd2bf",
         "type": "function",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
         "name": "Combine Results",
-        "func": "// msg.payload จะมี key เป็น rooms และ events จากโหนด join\nconst roomSummaries = msg.payload.rooms || [];\nconst events = msg.payload.events || [];\nconst macToRoomName = msg.report._macToRoomName || {};\n\n// Map room name เข้าไปใน room summaries\nmsg.report.rooms = roomSummaries.map(r => ({\n    ...r,\n    room: macToRoomName[r.mac] || r.mac\n}));\n\nmsg.report.events = events;\n\n// ล้างข้อมูลที่ไม่จำเป็นออก\ndelete msg.payload;\ndelete msg.topic;\ndelete msg._macToRoomName;\n\nreturn msg;",
+        "func": "// msg.payload จะมี key rooms และ events\nconst roomSummaries = msg.payload.rooms || [];\nconst events = msg.payload.events || [];\nconst macToRoomName = msg.report._macToRoomName || {};\n\n// map ชื่อห้องในสรุปอุณหภูมิ/uptime\nmsg.report.rooms = roomSummaries.map(r => ({\n  ...r,\n  room: macToRoomName[r.mac] || r.mac\n}));\n\n// incidents จาก SQL ใหม่\nmsg.report.incidents = events.map(e => ({\n  room: e.room_name || '',\n  sensor: e.sensor_name || '',\n  kind: e.kind || 'other',          // connectivity | temp | hum\n  t_open: e.t_open || '--:--',\n  t_close: e.t_close || null,\n  minutes_down: (e.minutes_down != null ? Number(e.minutes_down) : null),\n  seconds_down: (e.seconds_down != null ? Number(e.seconds_down) : null),\n  level: e.level || null,\n  trigger_value: e.trigger_value\n}));\n\n// cleanup\ndelete msg.payload;\ndelete msg.topic;\ndelete msg._macToRoomName;\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2630,
-        "y": 1540,
+        "x": 2450,
+        "y": 1500,
         "wires": [
             [
                 "37327e22131dff6d"
@@ -3726,6 +3791,7 @@
         "id": "c1a2b3d4.e5f6g7",
         "type": "function",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
         "name": "Set Daily Report Recipients",
         "func": "// ดึงรายชื่ออีเมลจาก Flow Context ที่บันทึกไว้\nconst settings = flow.get('notificationSettings') || {};\nconst recipients = settings.recipients?.email || [];\n\n// ตรวจสอบว่ามีผู้รับหรือไม่\nif (!recipients || recipients.length === 0) {\n    node.warn(\"Daily Report: No email recipients configured.\");\n    return null; // หยุดการทำงานถ้าไม่มีอีเมล\n}\n\n// กำหนดผู้รับใน msg.to (คั่นด้วยคอมม่า)\nmsg.to = recipients.join(',');\n\n// ปล่อยผ่าน msg.topic และ msg.payload ที่มาจากโหนดก่อนหน้า\nreturn msg;",
         "outputs": 1,
@@ -3734,8 +3800,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 3120,
-        "y": 1540,
+        "x": 2040,
+        "y": 1580,
         "wires": [
             [
                 "d2e3f4a5.b6c7d8"
@@ -3746,6 +3812,7 @@
         "id": "d2e3f4a5.b6c7d8",
         "type": "e-mail",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
         "server": "smtp.gmail.com",
         "port": "465",
         "authtype": "BASIC",
@@ -3755,14 +3822,15 @@
         "tls": false,
         "name": "armtanayuts@gmail.com",
         "dname": "Send Daily Report Email",
-        "x": 3370,
-        "y": 1540,
+        "x": 2290,
+        "y": 1580,
         "wires": []
     },
     {
         "id": "065747965f653d21",
         "type": "join",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
         "name": "Combine DB Results",
         "mode": "custom",
         "build": "object",
@@ -3779,8 +3847,8 @@
         "reduceInit": "",
         "reduceInitType": "num",
         "reduceFixup": "",
-        "x": 2420,
-        "y": 1540,
+        "x": 2240,
+        "y": 1500,
         "wires": [
             [
                 "dffe9683111bd2bf"
@@ -3791,6 +3859,414 @@
         "id": "37327e22131dff6d",
         "type": "function",
         "z": "640c6734fdac3595",
+        "g": "1af88c9d1185d6d0",
+        "name": "Format Thai Compact Report",
+        "func": "// --- รับข้อมูล ---\nconst reportData = msg.report || {};\nconst window = reportData.window || {};\nconst rooms = Array.isArray(reportData.rooms) ? reportData.rooms : [];\nconst incidents = Array.isArray(reportData.incidents) ? reportData.incidents : [];\n\n// --- Helpers ---\nfunction fmtNum(v, p = 1) { if (v === null || v === undefined || isNaN(v)) return '-'; return Number(v).toFixed(p); }\nfunction toThaiDateTime(iso) {\n  const d = new Date(iso);\n  const days = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\n  const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];\n  return `${days[d.getDay()]}ที่ ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543} เวลา ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} น.`;\n}\nfunction humanizeMinutesAndSeconds(mins, secs) {\n  const m = Number(mins), s = Number(secs);\n  if (!Number.isFinite(s) || s < 0) return '';\n  // ถ้ามากกว่าหรือเท่ากับ 60 วินาที ให้คง m เป็น Math.floor(s/60) ถ้า m ไม่ได้ส่งมาถูก\n  let totalS = s;\n  if (Number.isFinite(m) && m >= 0) totalS = m * 60 + (s % 60);\n  const d = Math.floor(totalS / 86400);\n  const h = Math.floor((totalS % 86400) / 3600);\n  const mm = Math.floor((totalS % 3600) / 60);\n  const ss = totalS % 60;\n  if (d > 0) return ` (${d} วัน ${h} ชม. ${mm} นาที${ss ? ` ${ss} วินาที` : ''})`;\n  if (h > 0) return ` (${h} ชม. ${mm} นาที${ss ? ` ${ss} วินาที` : ''})`;\n  if (mm > 0) return ` (${mm} นาที${ss ? ` ${ss} วินาที` : ''})`;\n  return ` (${ss} วินาที)`;\n}\n\n// ต้องมี room อย่างน้อย 1\nif (rooms.length === 0) { node.warn(\"No room data available to generate report.\"); return null; }\n\n// map MAC -> ชื่อห้อง\nconst deviceMap = flow.get('device_map') || {};\nconst macToName = {};\nfor (const key in deviceMap) {\n  if (key.startsWith('room')) {\n    const mac = deviceMap[key];\n    const letter = key.slice(-1).toUpperCase();\n    macToName[mac] = deviceMap[`name${letter}`] || `Server Room ${letter}`;\n  }\n}\n\nlet reportText = '';\nconst br = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';\n\n// ส่วนหัว\nreportText += '🏢 Server Room Daily Report\\n\\n';\nconst startTime = window.start_iso ? new Date(window.start_iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : 'N/A';\nconst endTime = window.end_iso ? new Date(window.end_iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : 'N/A';\nreportText += `📅 ${toThaiDateTime(reportData.generated_at)} (ข้อมูลช่วง ${startTime} - ${endTime})\\n`;\nreportText += `${br}\\n\\n`;\n\n// ห้อง\nrooms.forEach((r, idx) => {\n  const name = macToName[r.mac] || r.mac || `Room ${idx + 1}`;\n  const tempStatus = (r.temp_max > 26.5) ? '⚠️' : '✅';\n  const humStatus = (r.hum_max > 75) ? '⚠️' : '✅';\n  reportText += `📍 ${name}\\n`;\n  reportText += `   🌡️ อุณหภูมิ: เฉลี่ย ${fmtNum(r.temp_avg, 1)}°C (${fmtNum(r.temp_min, 1)}° - ${fmtNum(r.temp_max, 1)}°C) ${tempStatus}\\n`;\n  reportText += `   💧 ความชื้น: เฉลี่ย ${fmtNum(r.hum_avg, 1)}% (${fmtNum(r.hum_min, 1)}% - ${fmtNum(r.hum_max, 1)}%) ${humStatus}\\n`;\n  reportText += `   📡 สถานะ: Online ${fmtNum(r.uptime_pct, 1)}%\\n\\n`;\n});\nreportText += `${br}\\n`;\n\n// เหตุการณ์\nif (incidents.length > 0) {\n  reportText += `\\n⚠️ เหตุการณ์ที่ควรทราบ\\n`;\n  incidents.forEach(it => {\n    const room = it.room || '—';\n    const sensor = it.sensor ? ` ${it.sensor}` : '';\n    const durTxt = humanizeMinutesAndSeconds(it.minutes_down, it.seconds_down);\n\n    if (it.kind === 'connectivity') {\n      if (it.t_close) {\n        reportText += `- ${it.t_open} ${room}${sensor} ออฟไลน์ กลับมาออนไลน์เวลา ${it.t_close}${durTxt}\\n`;\n      } else {\n        reportText += `- ${it.t_open} ${room}${sensor} ออฟไลน์ต่อเนื่องยังไม่กลับมา${durTxt}\\n`;\n      }\n    } else if (it.kind === 'temp' || it.kind === 'hum') {\n      const label = it.kind === 'temp' ? 'อุณหภูมิ' : 'ความชื้น';\n      const val = (it.trigger_value != null) ? ` (${it.trigger_value})` : '';\n      if (it.t_close) {\n        reportText += `- ${it.t_open} ${room}${sensor} ${label} เกินเกณฑ์${val} กลับสู่ปกติเวลา ${it.t_close}${durTxt}\\n`;\n      } else {\n        reportText += `- ${it.t_open} ${room}${sensor} ${label} เกินเกณฑ์${val} ต่อเนื่องยังไม่กลับสู่ปกติ${durTxt}\\n`;\n      }\n    } else {\n      reportText += `- ${it.t_open} ${room}${sensor} เหตุการณ์: ${it.kind}${it.t_close ? ` ถึง ${it.t_close}` : ''}${durTxt}\\n`;\n    }\n  });\n  reportText += `\\n${br}\\n`;\n}\n\n// ท้าย\nconst genTime = new Date(reportData.generated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });\nreportText += `\\n🤖 Report สร้างโดยระบบอัตโนมัติ | ข้อมูลอัปเดต: ${genTime}\\n`;\n\nmsg.payload = reportText;\nconst reportDateForSubject = new Date(reportData.generated_at).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });\nmsg.topic = `📢Server Room Daily Report ประจำวันที่ ${reportDateForSubject}`;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1780,
+        "y": 1580,
+        "wires": [
+            [
+                "c1a2b3d4.e5f6g7"
+            ]
+        ]
+    },
+    {
+        "id": "5bfb3f67016d19eb",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "GET /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 2558.0078125,
+        "y": 2724.5078125,
+        "wires": [
+            [
+                "d414e3a7f5a2f983"
+            ]
+        ]
+    },
+    {
+        "id": "d414e3a7f5a2f983",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "Load Notification Settings",
+        "func": "// ดึงข้อมูลที่บันทึกไว้ ถ้าไม่มี ให้สร้างข้อมูลเริ่มต้นใน \"โครงสร้างใหม่\" ที่ถูกต้อง\nconst settings = flow.get('notificationSettings') || {\n    recipients: {\n        email: [],\n        telegram: []\n    },\n    schedule: {\n        weekdays: [true, true, true, true, true, true, true],\n        configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n    }\n};\n\nmsg.payload = settings;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2798.0078125,
+        "y": 2724.5078125,
+        "wires": [
+            [
+                "5788b88cf52f700d"
+            ]
+        ]
+    },
+    {
+        "id": "5788b88cf52f700d",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 2938.0078125,
+        "y": 2724.5078125,
+        "wires": []
+    },
+    {
+        "id": "7cd70d1e11624516",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "POST /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 2558.0078125,
+        "y": 2764.5078125,
+        "wires": [
+            [
+                "7208aa13555542f1"
+            ]
+        ]
+    },
+    {
+        "id": "7208aa13555542f1",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "Validate & Set Defaults",
+        "func": "// msg.payload คือ JSON ที่ UI ส่งมา\nlet payload = msg.payload;\n\n// --- 1. ตรวจสอบ Recipients ---\nif (!payload.recipients) {\n    payload.recipients = { email: [], telegram: [] };\n}\nif (!Array.isArray(payload.recipients.email)) {\n    payload.recipients.email = [];\n}\nif (!Array.isArray(payload.recipients.telegram)) {\n    payload.recipients.telegram = [];\n}\n\n// --- 2. ตรวจสอบ Schedule (โครงสร้างใหม่) ---\nconst defaults = {\n    weekdays: [true, true, true, true, true, true, true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n};\n\nlet schedule = payload.schedule;\nlet isScheduleInvalid = true;\n\n// ตรวจสอบว่า schedule.configs เป็น Array ที่ถูกต้องหรือไม่\nif (schedule && Array.isArray(schedule.weekdays) && schedule.weekdays.length === 7 && Array.isArray(schedule.configs)) {\n    // ถ้าข้อมูลถูกต้อง (อาจจะเป็น Array ว่างก็ได้ ถ้าผู้ใช้ลบหมด)\n    isScheduleInvalid = false;\n}\n\n// ถ้าข้อมูลไม่ถูกต้อง ให้ใช้ค่า Default\nif (isScheduleInvalid) {\n    node.warn(\"Received empty or invalid schedule. Applying default settings.\");\n    payload.schedule = defaults;\n}\n\nmsg.payload = payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2798.0078125,
+        "y": 2764.5078125,
+        "wires": [
+            [
+                "1fef58bcc9b577a2"
+            ]
+        ]
+    },
+    {
+        "id": "1fef58bcc9b577a2",
+        "type": "change",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "Save to Flow Context",
+        "rules": [
+            {
+                "t": "set",
+                "p": "notificationSettings",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 3048.0078125,
+        "y": 2764.5078125,
+        "wires": [
+            [
+                "531052887eaa79ae",
+                "46f06d723f785f42"
+            ]
+        ]
+    },
+    {
+        "id": "531052887eaa79ae",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 3208.0078125,
+        "y": 2764.5078125,
+        "wires": []
+    },
+    {
+        "id": "b4bd5f3d781bf26c",
+        "type": "comment",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "a458eed66168ebd9",
+        "name": "สำหรับ Daily Report",
+        "info": "",
+        "x": 2498.0078125,
+        "y": 2684.5078125,
+        "wires": []
+    },
+    {
+        "id": "2ecd8c26ec376a87",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "name": "Combine Results",
+        "func": "// msg.payload จะมี key เป็น rooms และ events จากโหนด join\nconst roomSummaries = msg.payload.rooms || [];\nconst events = msg.payload.events || [];\nconst macToRoomName = msg.report._macToRoomName || {};\n\n// Map room name เข้าไปใน room summaries\nmsg.report.rooms = roomSummaries.map(r => ({\n    ...r,\n    room: macToRoomName[r.mac] || r.mac\n}));\n\nmsg.report.events = events;\n\n// ล้างข้อมูลที่ไม่จำเป็นออก\ndelete msg.payload;\ndelete msg.topic;\ndelete msg._macToRoomName;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3238.0078125,
+        "y": 2904.5078125,
+        "wires": [
+            [
+                "c7359b2c933815d9"
+            ]
+        ]
+    },
+    {
+        "id": "46f06d723f785f42",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "name": "Update Cron Schedule",
+        "func": "// Update Cron Schedule (patched)\n// สร้าง/ลบ schedule ใน cronplus ให้ยิงตาม UI settings\nconst DEFAULT_SETTINGS = {\n  recipients: { email: [], telegram: [] },\n  schedule: {\n    weekdays: [true,true,true,true,true,true,true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n  }\n};\n\n// โหลดค่า config\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n  node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n  settings = DEFAULT_SETTINGS;\n  flow.set(\"notificationSettings\", settings);\n}\n\n// วันในสัปดาห์ (0=Sun..6=Sat)\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst selectedDOW = weekdays\n  .map((isOn, idx) => isOn ? idx : -1)\n  .filter(v => v !== -1);\n\n// เคลียร์งานเก่าก่อน\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ไม่มีวันหรือไม่มีตารางเวลา → ลบแล้วจบ\nif (selectedDOW.length === 0 || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n  node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n  return [[removeAllMsg], null];\n}\n\n// ทำ string DOW\nconst daysOfWeekStr = selectedDOW.join(',');\n\n// timeZone ที่จะใช้ทั้งใน node และในคำสั่ง\nconst TZ = \"Asia/Bangkok\";\n\n// สร้าง job ใหม่ตามแต่ละ config\nconst crypto = (s)=> {\n  // แฮชจิ๋วกันชื่อชน (ไม่ต้องเอาจริงจัง)\n  let h = 0; for (let i=0;i<s.length;i++) h = ((h<<5)-h) + s.charCodeAt(i) | 0;\n  return Math.abs(h).toString(36).slice(0,5);\n};\n\nconst addMsgs = settings.schedule.configs\n  .filter(cfg => cfg && typeof cfg.sendAt === \"string\" && cfg.sendAt.includes(\":\"))\n  .map((cfg) => {\n    const [hourStr, minuteStr] = cfg.sendAt.split(\":\").map(s => String(s).trim());\n    const hour = String(parseInt(hourStr, 10));\n    const minute = String(parseInt(minuteStr, 10));\n\n    // cron 6 ฟิลด์: sec min hour dom month dow\n    const expression = `0 ${minute} ${hour} * * ${daysOfWeekStr}`;\n\n    // ทำชื่อ job ให้คงที่แต่ไม่ชนกันง่าย\n    const sig = `${hour}:${minute}|${daysOfWeekStr}|${cfg.rangeStart||''}-${cfg.rangeEnd||''}`;\n    const name = `digest-${crypto(sig)}`;\n\n    return {\n      payload: {\n        command: \"add\",\n        name,\n        expressionType: \"cron\",\n        expression,\n        timeZone: TZ,\n        // payload ที่ปล่อยตอนถึงเวลา ให้พก cfg ออกไปด้วย\n        payload: {\n          kind: \"daily-digest-trigger\",\n          schedule: { ...cfg, daysOfWeekStr, timeZone: TZ }\n        },\n        payloadType: \"json\"\n      }\n    };\n  });\n\n// ส่งออก: output1 = remove-all, output2 = add ทั้งหมด\nreturn [[removeAllMsg], addMsgs];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2718.0078125,
+        "y": 2844.5078125,
+        "wires": [
+            [
+                "8c0f35a54b9363f3"
+            ],
+            [
+                "8c0f35a54b9363f3"
+            ]
+        ]
+    },
+    {
+        "id": "3546e931dff974db",
+        "type": "inject",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "name": "On Deploy",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str",
+                "v": "load_schedule"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 2478.0078125,
+        "y": 2844.5078125,
+        "wires": [
+            [
+                "46f06d723f785f42"
+            ]
+        ]
+    },
+    {
+        "id": "8c0f35a54b9363f3",
+        "type": "cronplus",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "name": "Daily Digest Scheduler",
+        "outputField": "payload",
+        "timeZone": "Asia/Bangkok",
+        "storeName": "",
+        "commandResponseMsgOutput": "output2",
+        "defaultLocation": "",
+        "defaultLocationType": "default",
+        "outputs": 2,
+        "options": [],
+        "x": 2998.0078125,
+        "y": 2844.5078125,
+        "wires": [
+            [
+                "d0f2e95df4932080"
+            ],
+            [
+                "d0f2e95df4932080"
+            ]
+        ]
+    },
+    {
+        "id": "d6f22178be929054",
+        "type": "mysql",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "mydb": "5e560f07cfec117a",
+        "name": "Query Room Summaries",
+        "x": 2818.0078125,
+        "y": 2884.5078125,
+        "wires": [
+            [
+                "ba4bd39afea7ee55"
+            ]
+        ]
+    },
+    {
+        "id": "d0f2e95df4932080",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "name": "Prepare Daily Report Data",
+        "func": "// รับค่า schedule ที่ cronplus ส่งมา\nconst schedule = msg.payload.schedule || {};\nconst { rangeStart, rangeEnd } = schedule;\n\n// --- Helper Functions ---\n// Helper สำหรับสร้าง Date object ตามเวลาท้องถิ่น\nfunction getLocalTime(timeStr, baseDate) {\n    if (!timeStr) return null;\n    const [hour, minute] = timeStr.split(':');\n    const date = new Date(baseDate);\n    date.setHours(parseInt(hour, 10));\n    date.setMinutes(parseInt(minute, 10));\n    date.setSeconds(0);\n    date.setMilliseconds(0);\n    return date;\n}\n\n// Helper สำหรับแปลง Date object เป็นฟอร์แมตที่ MySQL ต้องการ ('YYYY-MM-DD HH:MM:SS')\nfunction toSqlFormat(date) {\n    const pad = (num) => String(num).padStart(2, '0');\n    const y = date.getFullYear();\n    const m = pad(date.getMonth() + 1);\n    const d = pad(date.getDate());\n    const h = pad(date.getHours());\n    const min = pad(date.getMinutes());\n    const s = pad(date.getSeconds());\n    return `${y}-${m}-${d} ${h}:${min}:${s}`;\n}\n\n// คำนวณช่วงเวลาของ Report\nlet startDate, endDate;\nconst now = new Date();\n\nif (rangeStart > rangeEnd) { // Report แบบข้ามคืน (เช่น 17:00 -> 08:00)\n    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);\n    startDate = getLocalTime(rangeStart, yesterday);\n    endDate = getLocalTime(rangeEnd, now);\n} else { // Report แบบในวันเดียว (เช่น 08:00 -> 13:00)\n    startDate = getLocalTime(rangeStart, now);\n    endDate = getLocalTime(rangeEnd, now);\n}\n\n// แปลงเป็น String Format สำหรับส่งให้ MySQL\nconst start_sql = toSqlFormat(startDate);\nconst end_sql = toSqlFormat(endDate);\n\nif (!start_sql || !end_sql) {\n    node.error(\"Invalid time range in schedule payload\", msg);\n    return null;\n}\n\nconst duration_hours = (endDate.getTime() - startDate.getTime()) / 3600000;\n\n// เก็บข้อมูล report พื้นฐานไว้ใน msg\nmsg.report = {\n    generated_at: now.toISOString(),\n    window: {\n        start_iso: startDate.toISOString(),\n        end_iso: endDate.toISOString(),\n        duration_hours\n    }\n};\n\nconst deviceMap = flow.get('device_map', 'file') || {};\nconst macToRoomName = {};\nfor (const key in deviceMap) {\n    if (key.startsWith('room')) {\n        const mac = deviceMap[key];\n        const roomLetter = key.slice(-1).toUpperCase();\n        macToRoomName[mac] = deviceMap[`name${roomLetter}`] || `Room ${roomLetter}`;\n    }\n}\nconst macs = Object.keys(macToRoomName);\nif (macs.length === 0) {\n    node.warn(\"No devices configured in device_map for reporting.\");\n    return null;\n}\n\n// --- 1. สร้าง SQL สำหรับสรุปข้อมูลห้อง (Sensor Data + Uptime) ---\nconst roomSummarySql = `\nWITH RoomData AS (\n    SELECT mac, AVG(avg_temp) AS temp_avg, MIN(min_temp) AS temp_min, MAX(max_temp) AS temp_max, AVG(avg_hum) AS hum_avg, MIN(min_hum) AS hum_min, MAX(max_hum) AS hum_max\n    FROM dht_22 WHERE timestamp BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')}) GROUP BY mac\n), UptimeData AS (\n    SELECT mac, (SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS uptime_pct\n    FROM esp_status_log WHERE time BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')}) GROUP BY mac\n)\nSELECT r.mac, d.temp_avg, d.temp_min, d.temp_max, d.hum_avg, d.hum_min, d.hum_max, u.uptime_pct\nFROM (SELECT DISTINCT mac FROM dht_22 WHERE mac IN (${macs.map(() => '?').join(',')})) r\nLEFT JOIN RoomData d ON r.mac = d.mac LEFT JOIN UptimeData u ON r.mac = u.mac;\n`;\nconst roomParams = [start_sql, end_sql, ...macs, start_sql, end_sql, ...macs, ...macs];\n\n// --- 2. สร้าง SQL สำหรับดึง Events/Alerts (ปรับปรุงใหม่ V3) ---\nconst eventsSql = `\nSELECT\n    DATE_FORMAT(COALESCE(closed_at, opened_at), '%H:%i') as time,\n    room_name as room,\n    CASE\n        WHEN status IN ('recovery', 'closed') AND metric LIKE '%connectivity' THEN\n            CONCAT(\n                sensor_name, ' กลับมาออนไลน์ (ออฟไลน์นาน ',\n                TIMESTAMPDIFF(MINUTE, opened_at, closed_at),\n                ' นาที)'\n            )\n        WHEN status IN ('open', 'ack') AND metric LIKE '%connectivity' AND trigger_value = 0 THEN\n            CONCAT(sensor_name, ' ออฟไลน์')\n        ELSE\n            CONCAT(\n                sensor_name, ' ',\n                CASE\n                    WHEN metric = 'temp' THEN 'อุณหภูมิ'\n                    WHEN metric = 'hum' THEN 'ความชื้น'\n                    ELSE metric\n                END, ' ',\n                level, ' (', trigger_value, ')'\n            )\n    END as text\nFROM alert_events\nWHERE\n    (\n        status IN ('open', 'ack') OR\n        (status IN ('recovery', 'closed') AND closed_at BETWEEN ? AND ?)\n    )\n    AND opened_at BETWEEN ? AND ?\nORDER BY COALESCE(closed_at, opened_at) ASC;\n`;\nconst eventsParams = [start_sql, end_sql, start_sql, end_sql];\n\n// ส่ง msg ที่มี query ทั้งสองชุดออกไปคนละ output\nreturn [\n    { topic: roomSummarySql, payload: roomParams, report: msg.report, _macToRoomName: macToRoomName, keyName: \"rooms\" },\n    { topic: eventsSql, payload: eventsParams, report: msg.report, keyName: \"events\" }\n];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2558.0078125,
+        "y": 2904.5078125,
+        "wires": [
+            [
+                "d6f22178be929054"
+            ],
+            [
+                "73b0bea968b59465"
+            ]
+        ]
+    },
+    {
+        "id": "73b0bea968b59465",
+        "type": "mysql",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "mydb": "5e560f07cfec117a",
+        "name": "Query Events",
+        "x": 2758.0078125,
+        "y": 2924.5078125,
+        "wires": [
+            [
+                "ba4bd39afea7ee55"
+            ]
+        ]
+    },
+    {
+        "id": "ba4bd39afea7ee55",
+        "type": "join",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "name": "Combine DB Results",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "keyName",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "num",
+        "reduceFixup": "",
+        "x": 3038.0078125,
+        "y": 2904.5078125,
+        "wires": [
+            [
+                "2ecd8c26ec376a87"
+            ]
+        ]
+    },
+    {
+        "id": "c0c54f2542b4b7f1",
+        "type": "e-mail",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "server": "smtp.gmail.com",
+        "port": "465",
+        "authtype": "BASIC",
+        "saslformat": false,
+        "token": "oauth2Response.access_token",
+        "secure": true,
+        "tls": false,
+        "name": "armtanayuts@gmail.com",
+        "dname": "Send Daily Report Email",
+        "x": 3098.0078125,
+        "y": 2984.5078125,
+        "wires": []
+    },
+    {
+        "id": "bdd9bd5801646f99",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
+        "name": "Set Daily Report Recipients",
+        "func": "// ดึงรายชื่ออีเมลจาก Flow Context ที่บันทึกไว้\nconst settings = flow.get('notificationSettings') || {};\nconst recipients = settings.recipients?.email || [];\n\n// ตรวจสอบว่ามีผู้รับหรือไม่\nif (!recipients || recipients.length === 0) {\n    node.warn(\"Daily Report: No email recipients configured.\");\n    return null; // หยุดการทำงานถ้าไม่มีอีเมล\n}\n\n// กำหนดผู้รับใน msg.to (คั่นด้วยคอมม่า)\nmsg.to = recipients.join(',');\n\n// ปล่อยผ่าน msg.topic และ msg.payload ที่มาจากโหนดก่อนหน้า\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2858.0078125,
+        "y": 2984.5078125,
+        "wires": [
+            [
+                "c0c54f2542b4b7f1"
+            ]
+        ]
+    },
+    {
+        "id": "c7359b2c933815d9",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "d12975fb6b8b5eb7",
         "name": "Format Thai Compact Report",
         "func": "// --- รับข้อมูลที่ผ่านการประมวลผลมาแล้ว --- \nconst reportData = msg.report || {};\nconst window = reportData.window || {};\nconst rooms = Array.isArray(reportData.rooms) ? reportData.rooms : [];\nconst events = Array.isArray(reportData.events) ? reportData.events : [];\n\n// --- Helper Functions สำหรับจัดรูปแบบ --- \nfunction fmtNum(value, precision = 1) {\n    if (value === null || value === undefined || isNaN(value)) return '-';\n    return Number(value).toFixed(precision);\n}\n\nfunction toThaiDateTime(isoString) {\n    const date = new Date(isoString);\n    const days = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\n    const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];\n    const dayName = days[date.getDay()];\n    const dayOfMonth = date.getDate();\n    const monthName = months[date.getMonth()];\n    const year = date.getFullYear() + 543;\n    const hours = String(date.getHours()).padStart(2, '0');\n    const minutes = String(date.getMinutes()).padStart(2, '0');\n    return `${dayName}ที่ ${dayOfMonth} ${monthName} ${year} เวลา ${hours}:${minutes} น.`;\n}\n\n// --- ตรวจสอบว่ามีข้อมูลห้องหรือไม่ --- \nif (rooms.length === 0) {\n    node.warn(\"No room data available to generate report.\");\n    return null; // หยุดการทำงานถ้าไม่มีข้อมูล\n}\n\n// *** ดึงข้อมูล device_map จาก Flow Context เพื่อใช้แปลง MAC เป็นชื่อห้อง ***\nconst deviceMap = flow.get('device_map') || {};\nconst macToName = {};\nfor (const key in deviceMap) {\n    if (key.startsWith('room')) {\n        const mac = deviceMap[key];\n        const roomLetter = key.slice(-1).toUpperCase();\n        macToName[mac] = deviceMap[`name${roomLetter}`] || `Server Room ${roomLetter}`;\n    }\n}\n\n// ใช้ข้อมูลจากห้องแรกที่เจอ\nconst room = rooms[0];\nconst roomName = macToName[room.mac] || room.mac || 'ไม่พบชื่อห้อง';\n\n// --- เริ่มสร้างข้อความรีพอร์ต --- \nlet reportText = '';\nconst br = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';\n\n// ส่วนหัว\nreportText += '🏢 Server Room Daily Report\\n\\n';\nconst startTime = window.start_iso ? new Date(window.start_iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }).replace(' น.', '') : 'N/A';\nconst endTime = window.end_iso ? new Date(window.end_iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }).replace(' น.', '') : 'N/A';\nreportText += `📅 ${toThaiDateTime(reportData.generated_at)}(ข้อมูลช่วง ${startTime} น. - ${endTime} น.)\\n`;\nreportText += `${br}\\n\\n`;\n\n// ส่วนรายละเอียดห้อง\nconst tempStatus = (room.temp_max > 26.5) ? '⚠️' : '✅';\nconst humStatus = (room.hum_max > 75) ? '⚠️' : '✅';\n\nreportText += `📍 ${roomName}\\n`;\nreportText += `   🌡️ อุณหภูมิ: เฉลี่ย ${fmtNum(room.temp_avg, 1)}°C (${fmtNum(room.temp_min, 1)}° - ${fmtNum(room.temp_max, 1)}°C) ${tempStatus}\\n`;\nreportText += `   💧 ความชื้น: เฉลี่ย ${fmtNum(room.hum_avg, 1)}% (${fmtNum(room.hum_min, 1)}% - ${fmtNum(room.hum_max, 1)}%) ${humStatus}\\n`;\nreportText += `   📡 สถานะ: Online ${fmtNum(room.uptime_pct, 1)}%\\n`;\n\nreportText += `\\n${br}\\n`;\n\n// *** เพิ่มส่วนแสดง Event เข้ามาใหม่ ***\nif (events && events.length > 0) {\n    reportText += '\\n⚠️ เหตุการณ์ที่ควรทราบ\\n';\n    events.forEach(event => {\n        reportText += `- ${event.time || '--:--'} - ${event.text}\\n`;\n    });\n    reportText += `\\n${br}\\n`;\n}\n\n// ส่วนท้าย\nconst genTime = new Date(reportData.generated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(' น.', '');\nreportText += `\\n🤖 Report สร้างโดยระบบอัตโนมัติ | ข้อมูลอัปเดต: ${genTime}\\n`;\n\n// --- ส่งออกข้อมูล --- \nmsg.payload = reportText;\nconst reportDateForSubject = new Date(reportData.generated_at).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });\nmsg.topic = `📢Server Room Daily Report ประจำวันที่ ${reportDateForSubject}`;\n\nreturn msg;",
         "outputs": 1,
@@ -3799,11 +4275,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2860,
-        "y": 1540,
+        "x": 2598.0078125,
+        "y": 2984.5078125,
         "wires": [
             [
-                "c1a2b3d4.e5f6g7"
+                "bdd9bd5801646f99"
             ]
         ]
     },
