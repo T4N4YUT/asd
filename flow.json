@@ -1442,7 +1442,8 @@
         "y": 780,
         "wires": [
             [
-                "6d0dbf7cb49c607c"
+                "6d0dbf7cb49c607c",
+                "2c25407253acdf41"
             ]
         ]
     },
@@ -2235,7 +2236,7 @@
         "g": "05736f525f0739c2",
         "name": "สำหรับเก็บ Map mac to room",
         "info": "",
-        "x": 1810,
+        "x": 1800,
         "y": 560,
         "wires": []
     },
@@ -2557,7 +2558,7 @@
         "z": "640c6734fdac3595",
         "g": "bc3f5b7e2b5083ca",
         "name": "Insert ack",
-        "func": "// Function: Prepare ACK Query (FIXED)\n\nconst eventId = msg.req.params.id;\nconst payload = msg.payload || {};\nconst ackNote = (payload.ack_note ?? payload.note ?? '').toString();\nconst ackBy = payload.ack_by || 'WebAppUser';\nif (!eventId) {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: 'Event ID is missing.' };\n    return msg;\n}\n\n// Create the multi-statement SQL\nmsg.topic = `\n    UPDATE \\`alert_events\\`\n       SET \\`status\\` = 'ack',\n           \\`ack_at\\` = NOW(),\n           \\`ack_by\\` = ?,\n           \\`ack_note\\` = ?,\n           \\`last_updated\\` = NOW()\n     WHERE \\`event_id\\` = ? AND \\`status\\` = 'open';\n    SELECT dedup_key FROM \\`alert_events\\` WHERE \\`event_id\\` = ?;\n`;\n\n// Add nowSql to the payload array for the ack_at field\nmsg.payload = [ackBy, ackNote, eventId, eventId];\n// Store the response to send back to the UI\nmsg._responsePayload = { ok: true, message: 'Alert acknowledged successfully.' };\n\nreturn msg;",
+        "func": "// Function: Prepare ACK Query (V2 with Validation)\n\nconst eventId = msg.req.params.id;\nconst payload = msg.payload || {};\nconst ackNote = (payload.ack_note ?? payload.note ?? '').toString();\nlet ackBy = (payload.ack_by || '').toString().trim();\n\nif (!eventId) {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: 'Event ID is missing.' };\n    return msg;\n}\n\n// --- START VALIDATION ---\nif (!ackBy) {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: 'Acknowledged By cannot be empty.' };\n    return msg;\n}\n\nif (ackBy.toLowerCase() === 'system') {\n    msg.statusCode = 400;\n    msg.payload = { ok: false, error: 'Cannot use \"System\" as name.' };\n    return msg;\n}\n// --- END VALIDATION ---\n\n// Create the multi-statement SQL\nmsg.topic = `\n    UPDATE \\`alert_events\\`\n       SET \\`status\\` = 'ack',\n           \\`ack_at\\` = NOW(),\n           \\`ack_by\\` = ?,\n           \\`ack_note\\` = ?,\n           \\`last_updated\\` = NOW()\n     WHERE \\`event_id\\` = ? AND \\`status\\` = 'open';\n    SELECT dedup_key FROM \\`alert_events\\` WHERE \\`event_id\\` = ?;\n`;\n\n// Add nowSql to the payload array for the ack_at field\nmsg.payload = [ackBy, ackNote, eventId, eventId];\n// Store the response to send back to the UI\nmsg._responsePayload = { ok: true, message: 'Alert acknowledged successfully.' };\n\nreturn msg;",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -2895,7 +2896,8 @@
         "y": 1320,
         "wires": [
             [
-                "82779c738ad44c4b"
+                "82779c738ad44c4b",
+                "91caa0124755236c"
             ]
         ]
     },
@@ -2916,7 +2918,8 @@
         "y": 1320,
         "wires": [
             [
-                "258f6bf27fc6e1cf"
+                "258f6bf27fc6e1cf",
+                "e7411741075bca07"
             ]
         ]
     },
@@ -2967,7 +2970,8 @@
         "y": 1380,
         "wires": [
             [
-                "f3110649b75fa1f6"
+                "f3110649b75fa1f6",
+                "de4b14857ed56b43"
             ]
         ]
     },
@@ -3020,7 +3024,8 @@
         "y": 1380,
         "wires": [
             [
-                "7f021b2b6bf737d9"
+                "7f021b2b6bf737d9",
+                "8e7c5761295f4dca"
             ]
         ]
     },
@@ -3060,7 +3065,8 @@
         "y": 1380,
         "wires": [
             [
-                "a7081151ab3a2ad4"
+                "a7081151ab3a2ad4",
+                "e49915b2a7082f86"
             ]
         ]
     },
@@ -3562,7 +3568,8 @@
         "y": 1320,
         "wires": [
             [
-                "417fa61902dccc67"
+                "417fa61902dccc67",
+                "31dfd1d1a484a46f"
             ]
         ]
     },
@@ -4284,6 +4291,22 @@
         ]
     },
     {
+        "id": "2c25407253acdf41",
+        "type": "debug",
+        "z": "640c6734fdac3595",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2660,
+        "y": 360,
+        "wires": []
+    },
+    {
         "id": "9708f9c81584ae9a",
         "type": "uibuilder",
         "z": "640c6734fdac3595",
@@ -4312,6 +4335,108 @@
             ],
             []
         ]
+    },
+    {
+        "id": "91caa0124755236c",
+        "type": "debug",
+        "z": "640c6734fdac3595",
+        "name": "GET /api/export",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3060,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "e7411741075bca07",
+        "type": "debug",
+        "z": "640c6734fdac3595",
+        "name": "1. Prepare Info & Sensor Query",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3410,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "31dfd1d1a484a46f",
+        "type": "debug",
+        "z": "640c6734fdac3595",
+        "name": "2. Prepare Alert Query",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3628.5078125,
+        "y": 1560.5078125,
+        "wires": []
+    },
+    {
+        "id": "de4b14857ed56b43",
+        "type": "debug",
+        "z": "640c6734fdac3595",
+        "name": "3. Prepare Data",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3100,
+        "y": 1620,
+        "wires": []
+    },
+    {
+        "id": "8e7c5761295f4dca",
+        "type": "debug",
+        "z": "640c6734fdac3595",
+        "name": "4a. Create CSV String",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3420,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "e49915b2a7082f86",
+        "type": "debug",
+        "z": "640c6734fdac3595",
+        "name": "5. Set Final Headers",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3780,
+        "y": 1660,
+        "wires": []
     },
     {
         "id": "8301192ec347dbc9",
