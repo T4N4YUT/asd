@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <script
         src="https://cdn.jsdelivr.net/npm/node-red-contrib-uibuilder@7.4.3/front-end/uibuilder.iife.min.js"></script>
@@ -24,12 +23,10 @@
             -moz-osx-font-smoothing: grayscale;
             transform: translateZ(0);
         }
-
         html {
             font-size: 19px;
             color-scheme: dark;
         }
-
         :root {
             --bg: #0b1220;
             --panel: #121a2b;
@@ -42,13 +39,11 @@
             --icon-gap: .5rem;
             --icon-w: 1.1rem;
         }
-
         *,
         *::before,
         *::after {
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
@@ -56,20 +51,17 @@
             scrollbar-width: thin;
             scrollbar-color: var(--border) var(--bg);
         }
-
         .main-content {
             position: fixed;
             inset: 0;
             transition: transform .05s ease-in-out;
             will-change: transform;
         }
-
         @media (max-width:1023px) {
             .main-content {
                 transform: none !important;
             }
         }
-
         #sidebar,
         #mainContent,
         #sidebar *,
@@ -78,7 +70,6 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-
         #sidebar img,
         #mainContent img,
         #sidebar svg,
@@ -86,43 +77,36 @@
         #mainContent canvas {
             -webkit-user-drag: none;
         }
-
         .copyable {
             -webkit-user-select: text !important;
             user-select: text !important;
         }
-
         .kpi-card {
             background: var(--panel);
             border: 1px solid var(--border);
             border-radius: .75rem;
             padding: .75rem 1rem;
         }
-
         .kpi-title {
             color: var(--muted);
             font-size: .8rem;
         }
-
         .kpi-value {
             font-size: 1.5rem;
             font-weight: 800;
         }
-
         .progress {
             height: 8px;
             background: var(--panel-2);
             border-radius: 9999px;
             overflow: hidden;
         }
-
         .progress>span {
             display: block;
             height: 100%;
             background: linear-gradient(90deg, #22c55e, #10b981);
             width: var(--val, 0%);
         }
-
         .card-chart {
             width: 100%;
             height: clamp(60px, 12vh, 80px);
@@ -135,7 +119,6 @@
             border-radius: .75rem;
             box-sizing: border-box;
         }
-
         .card-chart>canvas {
             position: relative !important;
             display: block !important;
@@ -143,11 +126,9 @@
             height: 100% !important;
             max-width: 100% !important;
         }
-
         .hidden-card {
             display: none !important;
         }
-
         @media (max-width:640px) {
             .card-chart {
                 height: 85px !important;
@@ -155,48 +136,38 @@
                 max-height: 100px !important;
             }
         }
-
         @media (min-width:1280px) {
             .card-chart {
                 min-height: 90px;
                 max-height: 120px;
             }
-
             .flex-1.overflow-auto.p-6 {
                 padding-right: 1rem;
             }
         }
-
         @media (min-width:1280px) {
-
             .flex-1.overflow-auto.p-6>.grid,
             .grid.grid-cols-1.xl\:grid-cols-\[1fr_22rem\] {
                 grid-template-columns: minmax(0, 1fr) 22rem !important;
             }
         }
-
         :focus {
             outline: none;
         }
-
         :focus-visible {
             outline: 2px solid rgba(59, 130, 246, .7);
             outline-offset: 2px;
         }
-
         .offline-blank {
             background: var(--panel) !important;
             border: 1px solid var(--border) !important;
         }
-
         .offline-blank * {
             visibility: hidden !important;
         }
-
         .offline-hide {
             display: none !important;
         }
-
         .config-overlay {
             position: fixed;
             inset: 0;
@@ -205,11 +176,9 @@
             display: none;
             z-index: 50;
         }
-
         .config-overlay.active {
             display: block;
         }
-
         .config-panel {
             position: absolute;
             right: 1.5rem;
@@ -227,7 +196,6 @@
             --cfg-gap: .75rem;
             --cfg-radius: .65rem;
         }
-
         .config-header {
             padding: .75rem 1rem;
             border-bottom: 1px solid var(--border);
@@ -239,12 +207,10 @@
             gap: .5rem;
             justify-content: space-between;
         }
-
         .config-header h5 {
             font-size: 1rem;
             font-weight: 600;
         }
-
         .config-body {
             flex-grow: 1;
             max-height: none;
@@ -252,7 +218,6 @@
             overflow: visible;
             padding: 1rem;
         }
-
         .config-footer {
             padding: .75rem 1rem;
             border-top: 1px solid var(--border);
@@ -260,7 +225,6 @@
             border-bottom-left-radius: .75rem;
             border-bottom-right-radius: .75rem;
         }
-
         .config-tabs {
             display: flex;
             justify-content: space-between;
@@ -269,7 +233,6 @@
             border-bottom: none;
             gap: .75rem;
         }
-
         .config-tab {
             flex: 1;
             text-align: center;
@@ -282,29 +245,24 @@
             font-size: .85rem;
             margin-bottom: 0;
         }
-
         .config-tab.active {
             color: var(--accent);
             font-weight: 600;
             box-shadow: inset 0 -2px 0 0 var(--accent);
         }
-
         .config-section {
             display: none;
             margin-top: .75rem;
         }
-
         .config-section.active {
             display: block;
         }
-
         .config-label {
             font-size: .875rem;
             color: var(--muted);
             margin-bottom: .35rem;
             display: block;
         }
-
         .config-input,
         .config-select,
         input[type="datetime-local"] {
@@ -316,17 +274,14 @@
             border: 1px solid var(--border);
             transition: border-color 0.05s ease-in-out;
         }
-
         .config-input::placeholder {
             color: #9aa6b2;
         }
-
         .config-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: .75rem;
         }
-
         .btn {
             padding: .5rem .75rem;
             border-radius: .55rem;
@@ -340,31 +295,25 @@
             align-items: center;
             justify-content: center;
         }
-
         .btn:hover {
             border-color: var(--accent);
             color: white;
             filter: brightness(1.2);
         }
-
         .btn-primary {
             border-color: var(--accent);
         }
-
         .btn-danger {
             color: #fda4af;
             border-color: #7f1d1d;
         }
-
         .btn i {
             margin-right: .4rem;
         }
-
         .small-muted {
             font-size: .8rem;
             color: var(--muted);
         }
-
         .list-item {
             display: flex;
             justify-content: space-between;
@@ -374,35 +323,29 @@
             border-radius: .5rem;
             padding: .4rem .6rem;
         }
-
         .remove-item-btn {
             color: #ef4444;
         }
-
         #modal-room-detail {
             z-index: 55;
         }
-
         #modal-room-detail canvas {
             user-select: auto;
             -webkit-user-select: auto;
             -webkit-user-drag: auto;
         }
-
         #modal-reboot,
         #modal-export,
         #modal-device-map,
         #modal-settings {
             z-index: 60;
         }
-
         #modal-reboot.centered,
         #modal-export.centered,
         #modal-device-map.centered,
         #modal-settings.centered {
             z-index: 70 !important;
         }
-
         #modal-reboot.centered>div,
         #modal-export.centered>div,
         #modal-device-map.centered>div,
@@ -415,7 +358,6 @@
             transition: transform 160ms ease, opacity 160ms ease;
             max-width: min(92vw, 32rem) !important;
         }
-
         #modal-summary-detail.centered .config-panel {
             right: auto !important;
             left: 50% !important;
@@ -423,13 +365,11 @@
             transform: translate(-50%, -50%) !important;
             max-width: min(92vw, 32rem) !important;
         }
-
         #modal-reboot.centered>div,
         #modal-export.centered>div,
         #modal-device-map.centered>div {
             width: min(92vw, 26rem);
         }
-
         #modal-reboot.centered,
         #modal-export.centered,
         #modal-device-map.centered,
@@ -438,68 +378,55 @@
             display: block;
             background: rgba(0, 0, 0, .38);
         }
-
         .config-body::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
-
         .config-body::-webkit-scrollbar-track {
             background: var(--panel-2);
             border-radius: 10px;
         }
-
         .config-body::-webkit-scrollbar-thumb {
             background-color: var(--border);
             border-radius: 10px;
             border: 2px solid var(--panel-2);
         }
-
         .config-body::-webkit-scrollbar-thumb:hover {
             background-color: var(--muted);
         }
-
         body::-webkit-scrollbar {
             width: 10px;
             height: 10px;
         }
-
         body::-webkit-scrollbar-track {
             background: var(--bg);
         }
-
         body::-webkit-scrollbar-thumb {
             background-color: var(--border);
             border-radius: 10px;
         }
-
         body::-webkit-scrollbar-thumb:hover {
             background-color: var(--muted);
         }
-
         #modal-settings.centered .config-panel {
             width: clamp(24rem, 32vw, 44rem) !important;
             max-width: 96vw !important;
             height: clamp(520px, 78vh, 720px) !important;
         }
-
         @media (max-width:640px) {
             #modal-settings.centered .config-panel {
                 width: 96vw !important;
                 height: 90vh !important;
             }
         }
-
         #modal-settings .config-panel.fullscreen {
             width: 96vw !important;
             height: 94vh !important;
         }
-
         #btn-copy-mac:disabled {
             opacity: .5;
             cursor: not-allowed;
         }
-
         #btn-copy-mac {
             display: inline-flex;
             align-items: center;
@@ -508,17 +435,14 @@
             height: 36px;
             padding: 0;
         }
-
         #btn-copy-mac i {
             margin-right: 0 !important;
             line-height: 1;
         }
-
         #btn-copy-mac .icon {
             margin-right: 0 !important;
             width: auto !important;
         }
-
         #modal-settings .cfg-mac-row {
             display: flex;
             align-items: center;
@@ -530,43 +454,36 @@
             border-radius: var(--cfg-radius);
             margin-bottom: .5rem;
         }
-
         #modal-settings .cfg-mac-left {
             display: flex;
             align-items: center;
             gap: .6rem;
             min-width: 0;
         }
-
         #modal-settings .cfg-mac-label {
             font-size: .875rem;
             color: var(--muted);
         }
-
         #modal-settings .cfg-mac-value {
             font-size: .95rem;
             letter-spacing: .04em;
             white-space: nowrap;
         }
-
         .config-row.mqtt {
             display: grid;
             grid-template-columns: 1fr 11rem;
             gap: var(--cfg-gap, .75rem);
         }
-
         @media (max-width:640px) {
             .config-row.mqtt {
                 grid-template-columns: 1fr;
             }
         }
-
         .cfg-field {
             display: flex;
             flex-direction: column;
             gap: .35rem;
         }
-
         .cfg-label-row {
             display: flex;
             align-items: center;
@@ -575,7 +492,6 @@
             color: var(--muted);
             font-weight: 600;
         }
-
         #modal-settings .config-input,
         #modal-settings .config-select {
             height: 44px !important;
@@ -584,12 +500,10 @@
             padding-top: 0;
             padding-bottom: 0;
         }
-
         #modal-settings section#tab-alerts h6 {
             font-size: .9rem;
             margin-bottom: .25rem;
         }
-
         #modal-settings .config-section h5 .icon,
         #modal-settings .config-section h6 .icon {
             display: inline-block;
@@ -597,7 +511,6 @@
             margin-right: var(--icon-gap);
             vertical-align: middle;
         }
-
         #modal-settings .config-section .config-label>.icon,
         #modal-settings .cfg-label-row .icon {
             display: inline-block;
@@ -605,7 +518,6 @@
             margin-right: var(--icon-gap);
             vertical-align: middle;
         }
-
         #modal-settings .cfg-mac-left .icon,
         #modal-settings .btn .icon {
             display: inline-block;
@@ -613,17 +525,14 @@
             margin-right: var(--icon-gap);
             vertical-align: middle;
         }
-
         #modal-settings .config-tabs .config-tab i {
             margin-right: var(--icon-gap);
             vertical-align: middle;
         }
-
         #modal-settings .icon>i {
             display: block;
             line-height: 1;
         }
-
         .config-label .icon,
         .cfg-mac-left .icon,
         #btn-copy-mac .icon,
@@ -632,7 +541,6 @@
             align-items: unset !important;
             justify-content: unset !important;
         }
-
         .config-icon {
             width: var(--icon-w, 1.25rem);
             height: var(--icon-w, 1.25rem);
@@ -641,11 +549,9 @@
             justify-content: center;
             vertical-align: middle;
         }
-
         .config-icon>i {
             line-height: 1;
         }
-
         .led {
             --led: #22c55e;
             position: relative;
@@ -659,25 +565,19 @@
                 0 0 8px 3px color-mix(in srgb, var(--led) 30%, transparent);
             animation: ledPulse 5s ease-in-out infinite;
         }
-
         .led--green {
             --led: #22c55e;
         }
-
         .led--red {
             --led: #ef4444;
         }
-
         .led--yellow {
             --led: #f59e0b;
         }
-
         .led--gray {
             --led: #94a3b8;
         }
-
         @keyframes ledPulse {
-
             0%,
             100% {
                 box-shadow:
@@ -686,7 +586,6 @@
                     0 0 8px 3px color-mix(in srgb, var(--led) 25%, transparent);
                 filter: brightness(1);
             }
-
             50% {
                 box-shadow:
                     inset 0 0 2px rgba(0, 0, 0, .35),
@@ -695,7 +594,6 @@
                 filter: brightness(1.15);
             }
         }
-
         .icon-ring {
             width: 5rem;
             height: 5rem;
@@ -709,59 +607,48 @@
             backdrop-filter: blur(2px);
             margin: 0 auto 0.5rem;
         }
-
         .icon-ring img {
             width: 2.6rem;
             height: 2.6rem;
             object-fit: contain;
             filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .18));
         }
-
         .metric-title {
             font-weight: 700;
             font-size: clamp(1.2rem, 1.2vw, 1.05rem);
         }
-
         .metric-value {
             font-weight: 800;
             font-size: clamp(1.6rem, 3vw, 2rem);
             line-height: 1.05;
         }
-
         .metric-status {
             font-weight: 600;
             font-size: clamp(.80rem, 1.1vw, 1rem);
             opacity: .95;
         }
-
         .main-content {
             padding: 1rem !important;
         }
-
         .room-card {
             transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out;
         }
-
         .room-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-
         .btn:hover {
             border-color: var(--accent);
             color: white;
             filter: brightness(1.2);
         }
-
         #modal-room-detail .config-header .btn {
             transition: background-color 0.05s ease, border-color 0.05s ease;
         }
-
         #modal-room-detail .config-header button[data-close="modal-room-detail"]:hover {
             background-color: rgba(239, 68, 68, 0.25) !important;
             border-color: rgba(239, 68, 68, 0.8) !important;
         }
-
         #modal-reboot.centered>div,
         #modal-export.centered>div,
         #modal-device-map.centered>div,
@@ -773,13 +660,11 @@
             transform: translate(-50%, -50%) !important;
             transition: transform 160ms ease, opacity 160ms ease;
         }
-
         #modal-room-detail.centered .config-panel {
             width: calc(100vw - 4rem);
             height: calc(100vh - 4rem);
             max-width: initial;
         }
-
         .detail-card {
             background: var(--panel-2);
             border: 1px solid var(--border);
@@ -788,7 +673,6 @@
             display: flex;
             flex-direction: column;
         }
-
         .detail-card-title {
             font-size: 1rem;
             font-weight: 600;
@@ -796,29 +680,24 @@
             margin-bottom: .75rem;
             flex-shrink: 0;
         }
-
         .detail-card-content {
             flex-grow: 1;
             position: relative;
         }
-
         .live-row {
             display: grid;
             grid-template-columns: 7.5rem 1fr;
             align-items: center;
         }
-
         @media (max-width:480px) {
             .live-row {
                 grid-template-columns: 6.25rem 1fr;
             }
         }
-
         .live-values {
             font-variant-numeric: tabular-nums;
             letter-spacing: .01em;
         }
-
         .badge-chip {
             font-size: 10px;
             padding: 2px 6px;
@@ -827,32 +706,26 @@
             display: inline-flex;
             align-items: center;
         }
-
         .badge-temp {
             background: rgba(244, 63, 94, .12);
             color: #fda4af;
         }
-
         .badge-hum {
             background: rgba(59, 130, 246, .12);
             color: #93c5fd;
         }
-
         .live-sep {
             opacity: .45;
             margin: 0 .2rem;
         }
-
         .detail-card {
             display: flex;
             flex-direction: column;
         }
-
         .detail-card .detail-card-content {
             flex: 1 1 auto;
             min-height: 0;
         }
-
         .chart-legend {
             display: flex;
             flex-wrap: wrap;
@@ -860,7 +733,6 @@
             font-size: 0.7rem;
             line-height: 1;
         }
-
         .legend-item {
             display: inline-flex;
             align-items: center;
@@ -869,43 +741,36 @@
             opacity: 1;
             transition: opacity 0.05s;
         }
-
         .legend-item.hidden {
             opacity: 0.5;
             text-decoration: line-through;
         }
-
         .legend-box {
             display: inline-block;
             width: 10px;
             height: 10px;
             border-radius: 2px;
         }
-
         .legend-item {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
             cursor: pointer;
         }
-
         .modal-detail-room {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
         }
-
         .card-chart,
         #detail-uptime-chart-container {
             overflow: visible !important;
         }
-
         #modal-room-detail .config-body {
             overflow-y: auto !important;
             overflow-x: hidden;
         }
-
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -916,15 +781,12 @@
             justify-content: center;
             align-items: center;
         }
-
         #modal-pin-map {
             z-index: 65;
         }
-
         #modal-sensor-rules {
             z-index: 65;
         }
-
         #modal-pin-map.centered>div {
             position: absolute !important;
             left: 50% !important;
@@ -933,7 +795,6 @@
             transition: transform 160ms ease, opacity 160ms ease;
             width: min(92vw, 32rem);
         }
-
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="datetime-local"]::-webkit-calendar-picker-indicator,
         input[type="month"]::-webkit-calendar-picker-indicator,
@@ -942,23 +803,19 @@
             filter: invert(1) brightness(0.6);
             opacity: 0.9;
         }
-
         input[type="date"]::-webkit-calendar-picker-indicator:hover,
         input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
             opacity: 1;
         }
-
         input[type="datetime-local"],
         input[type="date"],
         input[type="time"],
         input[type="month"] {
             color: var(--text);
         }
-
         .schedule-input::-webkit-calendar-picker-indicator {
             display: none;
         }
-
         .custom-tooltip {
             opacity: 0;
             pointer-events: none;
@@ -974,63 +831,52 @@
             width: max-content;
             z-index: 100;
         }
-
         .custom-tooltip-header {
             font-weight: bold;
             margin-bottom: 6px;
         }
-
         .custom-tooltip-body {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
-
         .tooltip-line {
             display: flex;
             align-items: center;
             gap: 6px;
         }
-
         .tooltip-color-box {
             width: 10px;
             height: 10px;
             border-radius: 2px;
             flex-shrink: 0;
         }
-
         .chart-legend .legend-item {
             cursor: default;
             pointer-events: none;
         }
-
         .chart-legend .legend-box {
             opacity: 1;
             border: 0 !important;
         }
-
         #detail-uptime-chart-container+div>* {
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
-
         #detail-uptime-pct {
             color: #000000;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
         }
-
         .btn-close-custom {
             background-color: rgba(239, 68, 68, 0.12);
             color: #f87171;
             border: 1px solid rgba(239, 68, 68, 0.2);
             transition: all 0s ease-in-out;
         }
-
         .btn-close-custom:hover {
             background-color: rgba(239, 68, 68, 0.25);
             color: #fca5a5;
             border-color: rgba(239, 68, 68, 0.4);
         }
-
         #toast-container {
             position: fixed;
             bottom: 1.5rem;
@@ -1041,7 +887,6 @@
             gap: 0.75rem;
             align-items: flex-end;
         }
-
         .toast-notification {
             position: relative;
             display: flex;
@@ -1058,40 +903,33 @@
             animation: slideInRight 0.05s ease-out forwards;
             transition: border-color 0.05s ease-in-out;
         }
-
         .toast-fade-out {
             animation: fadeOut 0.4s ease-out forwards !important;
         }
-
         .toast-icon {
             font-size: 1.25rem;
             flex-shrink: 0;
         }
-
         @keyframes slideInRight {
             from {
                 opacity: 0;
                 transform: translateX(100%);
             }
-
             to {
                 opacity: 1;
                 transform: translateX(0);
             }
         }
-
         @keyframes fadeOut {
             from {
                 opacity: 1;
                 transform: translateX(0);
             }
-
             to {
                 opacity: 0;
                 transform: translateX(100%);
             }
         }
-
         .qa-popup-panel {
             display: flex;
             align-items: center;
@@ -1104,60 +942,50 @@
             width: 100%;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
-
         .qa-icon {
             font-size: 1.5rem;
             flex-shrink: 0;
         }
-
         .qa-msg {
             flex-grow: 1;
             font-size: 0.95rem;
             line-height: 1.5;
             color: var(--text);
         }
-
         .qa-close button.btn {
             height: auto;
             padding: 0.5rem 1rem;
             font-size: 0.85rem;
             background: var(--panel-2);
         }
-
         input[type="datetime-local"]::-webkit-calendar-picker-indicator {
             background: none;
             color: transparent;
             opacity: 0;
         }
-
         input[type="datetime-local"] {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M19 4h-2V2h-2v2H9V2H7v2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zM5 20V7h14V6l.002 14H5z'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
             background-size: 1em;
         }
-
         .config-input:hover,
         .config-select:hover,
         input[type="datetime-local"]:hover {
             border-color: var(--accent);
         }
-
         .room-card {
             transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, border-color 0.05s ease-in-out;
         }
-
         .room-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             border-color: var(--accent);
         }
-
         .toast-icon {
             font-size: 1.25rem;
             flex-shrink: 0;
         }
-
         .toast-close-btn {
             position: absolute;
             top: 0.25rem;
@@ -1171,19 +999,15 @@
             padding: 0.25rem 0.5rem;
             transition: color 0.2s ease;
         }
-
         .toast-close-btn:hover {
             color: var(--text);
         }
-
         .toast-notification {
             transition: border-color 0.2s ease-in-out;
         }
-
         .toast-notification:hover {
             border-color: var(--accent);
         }
-
         .weekday-btn {
             flex: 1;
             padding: 0.5rem 0.25rem;
@@ -1195,29 +1019,24 @@
             font-size: 0.8rem;
             text-align: center;
         }
-
         .weekday-btn:hover {
             border-color: var(--muted);
         }
-
         .weekday-btn.active {
             background-color: var(--accent);
             border-color: var(--accent);
             color: white;
             font-weight: 600;
         }
-
         .btn.action-delete {
             background-color: rgba(239, 68, 68, 0.2) !important;
             border-color: rgba(239, 68, 68, 0.7) !important;
             color: #f87171 !important;
         }
-
         .custom-dropdown-container {
             position: relative;
             z-index: 80;
         }
-
         .dropdown-panel {
             position: absolute;
             top: calc(100% + 0.5rem);
@@ -1231,7 +1050,6 @@
             z-index: 10;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
-
         .dropdown-item {
             display: flex;
             justify-content: space-between;
@@ -1241,12 +1059,10 @@
             transition: background-color 0.15s;
             font-size: 0.9rem;
         }
-
         .dropdown-item:hover {
             background-color: var(--accent);
             color: white;
         }
-
         .item-delete-btn {
             background: none;
             border: none;
@@ -1257,12 +1073,10 @@
             margin-left: 0.5rem;
             opacity: 0.7;
         }
-
         .dropdown-item:hover .item-delete-btn {
             color: white;
             opacity: 1;
         }
-
         .schedule-time-item {
             display: flex;
             justify-content: space-between;
@@ -1273,13 +1087,11 @@
             padding: .6rem .75rem;
             font-variant-numeric: tabular-nums;
         }
-
         .schedule-time-item .time-text {
             font-size: 1rem;
             font-weight: 500;
             letter-spacing: .05em;
         }
-
         .schedule-time-item .actions button {
             background: none;
             border: none;
@@ -1291,16 +1103,13 @@
             opacity: 0.7;
             transition: all 0.05s ease-in-out;
         }
-
         .schedule-time-item .actions button:hover {
             color: var(--text);
             opacity: 1;
         }
-
         .schedule-time-item .actions .remove-item-btn:hover {
             color: #ef4444;
         }
-
         .btn,
         #qa-card .grid button {
             padding: .5rem .75rem;
@@ -1316,12 +1125,10 @@
             justify-content: center;
             transition: all 0.05s ease-in-out;
         }
-
         #qa-card .grid button {
             height: auto;
             padding: 0.75rem;
         }
-
         .btn,
         .room-card,
         #qa-card .grid button,
@@ -1333,7 +1140,6 @@
         #series-dropdown-btn {
             transition: all 0.05s ease-in-out;
         }
-
         .btn,
         .room-card,
         #qa-card .grid button,
@@ -1347,13 +1153,11 @@
         .dropdown-item {
             transition: all 0.05s ease-in-out;
         }
-
         .room-card:hover,
         .room-card:focus-visible {
             color: var(--text);
             border-color: transparent !important;
         }
-
         .config-input:hover,
         .config-select:hover,
         input[type="datetime-local"]:hover,
@@ -1362,18 +1166,15 @@
         input[type="datetime-local"]:focus-visible {
             border-color: transparent;
         }
-
         .btn:hover i,
         .btn:focus-visible i {
             color: var(--accent);
         }
-
         .btn:hover {
             color: var(--text);
             filter: none;
             border-color: var(--border);
         }
-
         .weekday-btn.active:hover {
             filter: brightness(1.2);
             transform: translateY(-2px);
@@ -1381,16 +1182,13 @@
                 inset 0 0 0 1.5px rgba(255, 255, 255, 0.8),
                 0 0 12px 0 rgba(59, 130, 246, 0.6);
         }
-
         .dropdown-item:hover {
             background-color: transparent;
             color: var(--accent);
         }
-
         [id^="recipient-action-"]:hover .config-icon {
             color: var(--accent);
         }
-
         .btn:hover,
         .btn:focus-visible,
         .room-card:hover,
@@ -1430,29 +1228,24 @@
                     inset 0 0 0 1.5px var(--accent);
             }
         }
-
         .btn:hover,
         .btn:focus-visible {
             color: var(--text);
         }
-
         .dropdown-item:hover,
         .dropdown-item:focus-visible {
             background-color: rgba(59, 130, 246, 0.1);
             color: var(--text);
         }
-
         .config-tab:hover,
         .config-tab:focus-visible {
             color: var(--accent);
             background-color: rgba(59, 130, 246, 0.1);
         }
-
         .weekday-btn:hover,
         .weekday-btn:focus-visible {
             background-color: rgba(59, 130, 246, 0.1);
         }
-
         .weekday-btn.active:hover,
         .weekday-btn.active:focus-visible {
             filter: brightness(1.2);
@@ -1460,7 +1253,6 @@
                 inset 0 0 0 1.5px rgba(255, 255, 255, 0.8),
                 0 0 12px 0 rgba(59, 130, 246, 0.6);
         }
-
         .config-input:hover,
         .config-input:focus-visible,
         .config-select:hover,
@@ -1469,7 +1261,6 @@
         input[type="datetime-local"]:focus-visible {
             border-color: transparent;
         }
-
         .badge {
             display: inline-block;
             padding: 0.2em 0.6em;
@@ -1481,37 +1272,30 @@
             vertical-align: baseline;
             border-radius: 0.375rem;
         }
-
         .badge-critical {
             color: #fca5a5;
             background-color: rgba(239, 68, 68, 0.2);
         }
-
         .badge-warning {
             color: #fcd34d;
             background-color: rgba(251, 191, 36, 0.15);
         }
-
         #modal-alert-center:not(.hidden) {
             display: flex !important;
             justify-content: center;
             align-items: center;
         }
-
         #modal-alert-center {
             background-color: rgba(11, 18, 32, 0.7);
             transition: opacity 0.05s ease-in-out;
         }
-
         #modal-alert-center .alert-center-panel {
             max-height: calc(100vh - 3rem);
             height: calc(100vh - 3rem);
         }
-
         #alert-table-body tr:hover {
             background-color: rgba(255, 255, 255, 0.03);
         }
-
         .side-drawer {
             position: fixed;
             top: 0;
@@ -1527,29 +1311,24 @@
             transform: translateX(100%);
             transition: transform 0.05s ease-in-out;
         }
-
         .side-drawer.open {
             transform: translateX(0);
         }
-
         .drawer-header {
             padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border);
             background: var(--panel-2);
         }
-
         .drawer-body {
             flex-grow: 1;
             overflow-y: auto;
             padding: 1rem;
         }
-
         .drawer-footer {
             padding: 0.75rem 1rem;
             border-top: 1px solid var(--border);
             background: var(--panel-2);
         }
-
         .effective-rule-box {
             background: var(--panel-2);
             border: 1px solid var(--border);
@@ -1557,48 +1336,40 @@
             padding: 0.75rem;
             font-size: 0.8rem;
         }
-
         .effective-rule-item {
             display: flex;
             justify-content: space-between;
             padding: 0.25rem 0;
         }
-
         .origin-badge {
             font-size: 0.65rem;
             padding: 0.1rem 0.4rem;
             border-radius: 0.25rem;
             font-weight: 600;
         }
-
         .origin-sensor {
             background-color: rgba(16, 185, 129, 0.2);
             color: #6ee7b7;
         }
-
         .origin-room {
             background-color: rgba(59, 130, 246, 0.2);
             color: #93c5fd;
         }
-
         .origin-system {
             background-color: rgba(147, 51, 234, 0.2);
             color: #c4b5fd;
         }
-
         .toggle-switch {
             position: relative;
             display: inline-block;
             width: 44px;
             height: 24px;
         }
-
         .toggle-switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-
         .toggle-slider {
             position: absolute;
             cursor: pointer;
@@ -1611,7 +1382,6 @@
             transition: .4s;
             border-radius: 24px;
         }
-
         .toggle-slider:before {
             position: absolute;
             content: "";
@@ -1623,26 +1393,21 @@
             transition: .4s;
             border-radius: 50%;
         }
-
         input:checked+.toggle-slider {
             background-color: var(--accent);
         }
-
         input:checked+.toggle-slider:before {
             transform: translateX(20px);
             background-color: white;
         }
-
         .clickable-sensor-row {
             transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
             cursor: pointer;
         }
-
         .clickable-sensor-row:hover {
             background-color: var(--panel-2);
             border-color: var(--accent);
         }
-
         #modal-sensor-rules.centered .config-panel {
             right: auto !important;
             left: 50% !important;
@@ -1652,13 +1417,11 @@
             width: 60rem;
             max-width: 90vw !important;
         }
-
         #qa-alert-card,
         #card-critical,
         #card-warning {
             transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, border-color 0.05s ease-in-out;
         }
-
         #qa-alert-card:hover,
         #card-critical:hover,
         #card-warning:hover {
@@ -1666,14 +1429,12 @@
             border-color: var(--accent);
             box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
         }
-
         #detail-alert-list {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
             padding-top: 4px;
         }
-
         .alert-chip {
             display: flex;
             align-items: center;
@@ -1685,7 +1446,6 @@
             line-height: 1.2;
             border: 1px solid transparent;
         }
-
         .alert-chip-info {
             display: flex;
             align-items: center;
@@ -1695,17 +1455,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .alert-chip-info strong {
             font-weight: 700;
             opacity: 0.9;
         }
-
         .alert-chip .icon {
             font-size: 0.95rem;
             flex-shrink: 0;
         }
-
         .btn-ack-chip {
             padding: 0.5rem 1rem;
             font-size: 0.75rem;
@@ -1719,81 +1476,67 @@
             flex-shrink: 0;
             transition: all 0.05s ease-in-out;
         }
-
         .btn-ack-chip:hover {
             background-color: rgba(59, 130, 246, 0.4);
             border-color: rgba(59, 130, 246, 0.8);
             color: #fff;
             transform: scale(1.05);
         }
-
         .alert-chip-critical {
             background-color: rgba(239, 68, 68, 0.15);
             border-color: rgba(239, 68, 68, 0.4);
             color: #fca5a5;
         }
-
         .alert-chip-warning {
             background-color: rgba(245, 158, 11, 0.15);
             border-color: rgba(245, 158, 11, 0.4);
             color: #fcd34d;
         }
-
         .flash-update {
             animation: flash 0.7s ease-out;
         }
-
         @keyframes flash {
             0% {
                 background-color: rgba(253, 224, 71, 0.25);
                 border-color: rgba(253, 224, 71, 0.6);
                 box-shadow: 0 0 12px rgba(253, 224, 71, 0.3);
             }
-
             100% {
                 background-color: transparent;
                 border-color: var(--border);
                 box-shadow: none;
             }
         }
-
         .flash-update-row {
             animation: flash-row 0.8s ease-out;
         }
-
         @keyframes flash-row {
-
             0%,
             100% {
                 background-color: var(--panel);
             }
-
             50% {
                 background-color: var(--border);
             }
         }
-
         .btn.btn-confirm {
             background-color: #3b82f6;
             border-color: #3b82f6;
             color: white;
             font-weight: 600;
         }
-
         .btn.btn-confirm:hover:not(:disabled) {
             background-color: #2563eb;
             border-color: #2563eb;
             transform: translateY(-2px);
             box-shadow: none !important;
         }
-
         .btn.btn-reset {
             background-color: #7f1d1d;
             border-color: #991b1b;
             color: #fca5a5;
             font-weight: 600;
         }
-
         .btn.btn-reset:hover:not(:disabled) {
             background-color: #991b1b;
             border-color: #b91c1c;
@@ -1801,11 +1544,9 @@
             transform: translateY(-2px);
             box-shadow: none !important;
         }
-
         #modal-confirm:not(.hidden) {
             display: flex;
         }
-
         #modal-confirm .qa-popup-panel {
             display: flex;
             flex-direction: column;
@@ -1813,46 +1554,38 @@
             padding: 1.5rem;
             animation: fadeInScale 0.2s ease-out forwards;
         }
-
         @keyframes fadeInScale {
             from {
                 opacity: 0;
                 transform: scale(0.95);
             }
-
             to {
                 opacity: 1;
                 transform: scale(1);
             }
         }
-
         #btn-confirm-yes {
             font-weight: 600;
             transition: all 0.05s ease-in-out;
         }
-
         #btn-confirm-yes.btn-confirm {
             background-color: #3b82f6;
             border-color: #3b82f6;
             color: white;
         }
-
         #btn-confirm-yes.btn-confirm:hover {
             background-color: #2563eb;
             border-color: #2563eb;
         }
-
         #btn-confirm-yes.btn-reset {
             background-color: #dc2626;
             border-color: #dc2626;
             color: white;
         }
-
         #btn-confirm-yes.btn-reset:hover {
             background-color: #b91c1c;
             border-color: #b91c1c;
         }
-
         .confirm-footer {
             display: flex;
             justify-content: flex-end;
@@ -1861,14 +1594,12 @@
             padding-top: 1rem;
             margin-top: 0.5rem;
         }
-
         .config-overlay,
         [id^="modal-"]:not(#modal-confirm) {
             background-color: rgba(11, 18, 32, 0.7);
             backdrop-filter: blur(4px);
             transition: opacity 0.05s ease-out;
         }
-
         #modal-reboot>div,
         #modal-export>div,
         #modal-device-map>div,
@@ -1881,7 +1612,6 @@
         #modal-sensor-rules .config-panel {
             transition: transform 0.05s ease-out, opacity 0.05s ease-out;
         }
-
         .modal-initial-state,
         .modal-is-exiting>div,
         .modal-is-exiting .config-panel,
@@ -1889,18 +1619,15 @@
             opacity: 0;
             transform: scale(0.95) translateY(10px);
         }
-
         .modal-is-exiting {
             opacity: 0;
         }
-
         [id^="modal-"] {
             background-color: rgba(11, 18, 32, 0.7);
             backdrop-filter: blur(4px);
             transition: opacity 0.05s ease-out;
             opacity: 1;
         }
-
         [id^="modal-"]>div,
         [id^="modal-"] .config-panel,
         [id^="modal-"] .alert-center-panel {
@@ -1908,49 +1635,41 @@
             transform: scale(1) translateY(0);
             opacity: 1;
         }
-
         .modal-is-entering {
             opacity: 0;
         }
-
         .modal-is-entering>div,
         .modal-is-entering .config-panel,
         .modal-is-entering .alert-center-panel {
             opacity: 0;
             transform: scale(0.95) translateY(10px);
         }
-
         .modal-is-exiting {
             opacity: 0;
         }
-
         .modal-is-exiting>div,
         .modal-is-exiting .config-panel,
         .modal-is-exiting .alert-center-panel {
             opacity: 0;
             transform: scale(0.95) translateY(10px);
         }
-
         .settings-locked .config-body fieldset,
         .settings-locked .config-body .cfg-mac-row,
         .settings-locked .config-body label {
             opacity: 0.7;
             transition: opacity 0.05s ease-in-out;
         }
-
         .settings-locked .config-body input,
         .settings-locked .config-body select {
             pointer-events: none;
             cursor: not-allowed;
         }
-
         #summary-card-temp-max,
         #summary-card-hum-max,
         #summary-card-temp-rise,
         #summary-card-dew-max {
             transition: transform 0.05s ease-in-out, box-shadow 0.05s ease-in-out, border-color 0.05s ease-in-out;
         }
-
         #summary-card-temp-max:hover,
         #summary-card-hum-max:hover,
         #summary-card-temp-rise:hover,
@@ -1959,7 +1678,6 @@
             border-color: var(--accent);
             box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
         }
-
         #recovery-fab {
             opacity: 0;
             transform: scale(0.5);
@@ -1968,33 +1686,27 @@
                 box-shadow 0.2s ease-out;
             cursor: grab;
         }
-
         #recovery-fab:hover {
             transform: scale(1.1);
             box-shadow: 0 8px 24px rgba(2, 132, 255, 0.4);
         }
-
         #recovery-fab:active {
             cursor: grabbing;
             transform: scale(1.05);
         }
-
         #recovery-fab.fab-visible {
             opacity: 1;
             transform: scale(1);
         }
-
         .unseen-recovery {
             background-color: rgba(59, 130, 246, 0.15) !important;
             border-left: 3px solid var(--accent) !important;
         }
-
         .unseen-recovery:hover {
             background-color: rgba(59, 130, 246, 0.25) !important;
         }
     </style>
 </head>
-
 <body class="relative h-screen overflow-hidden">
     <main id="mainContent" class="main-content flex flex-col">
         <div class="flex-1 overflow-auto p-6 h-full">
@@ -2841,7 +2553,6 @@
                         <input id="mqtt-pass" type="password" class="config-input mt-1" placeholder="">
                     </label>
                 </section>
-
             </div>
             <div class="config-footer">
                 <div class="flex items-center justify-end gap-3"> <button id="btn-edit-settings"
@@ -3035,7 +2746,6 @@
                         </div>
                     </div>
                 </section>
-
                 <section>
                     <h6 class="font-semibold text-base mb-3 text-slate-300">
                         <i class="fa-solid fa-calendar-day w-5 mr-1 text-amber-400"></i>Daily Report Notifications
@@ -3302,7 +3012,6 @@
                     return 'Invalid Date';
                 }
             }
-
             function buildLifecycleTooltipHTML(row, currentTab) {
                 const opened = fmtDate(row.opened_at);
                 const acked = fmtDate(row.ack_at);
@@ -4922,16 +4631,11 @@
             function resetDetailModalUI(roomId) {
                 console.log(`[UI Reset] Resetting detail modal for offline room: ${roomId}`);
                 const modal = document.getElementById('modal-room-detail');
-                // ตรวจสอบอีกครั้งว่า modal เปิดอยู่สำหรับห้องที่ถูกต้องหรือไม่
                 if (!modal || modal.classList.contains('hidden') || modal.dataset.currentRoom !== roomId) {
                     return;
                 }
-
-                // 1. เปลี่ยนไฟ LED เป็นสีแดง
                 const statusLed = document.getElementById('detail-room-status-led');
                 if (statusLed) setLed(statusLed, 'led--red');
-
-                // 2. ล้างค่า Key Indicators ทั้งหมด
                 const kpiIds = [
                     'kpi-temp-min', 'kpi-temp-avg', 'kpi-temp-max',
                     'kpi-rh-min', 'kpi-rh-avg', 'kpi-rh-max', 'kpi-dew-avg'
@@ -4940,8 +4644,6 @@
                     const el = document.getElementById(id);
                     if (el) el.textContent = '—';
                 });
-
-                // 3. รีเซ็ตกราฟ Uptime
                 const uptimePctEl = document.getElementById('detail-uptime-pct');
                 if (uptimePctEl) uptimePctEl.textContent = '— %';
                 const uptimeChart = window._uptimeCharts ? window._uptimeCharts['detail-uptime-chart-canvas'] : null;
@@ -4950,14 +4652,10 @@
                     uptimeChart.options.plugins.uptimeLabel.text = 'Offline';
                     uptimeChart.update('none');
                 }
-
-                // 4. แสดงข้อความว่า "Device is offline" ในส่วนของ Sensor List
                 const sensorList = document.getElementById('detail-sensor-list');
                 if (sensorList) {
                     sensorList.innerHTML = '<li class="text-center text-[var(--muted)] mt-4">Device is offline</li>';
                 }
-
-                // 5. ล้างข้อมูลกราฟหลัก (อุณหภูมิและความชื้น)
                 if (window._detailCharts) {
                     if (window._detailCharts.temp) {
                         window._detailCharts.temp.data.datasets = [];
@@ -4968,8 +4666,6 @@
                         window._detailCharts.rh.update('none');
                     }
                 }
-
-                // 6. ปิดการใช้งานปุ่มที่ไม่สามารถใช้ได้ตอน Offline
                 const btnIdsToDisable = ['detail-btn-reboot', 'detail-btn-settings', 'open-pin-map'];
                 btnIdsToDisable.forEach(id => {
                     const btn = document.getElementById(id);
@@ -4981,7 +4677,6 @@
                 if (window.roomDataStore && window.roomDataStore[roomId]) {
                     window.roomDataStore[roomId].history = [];
                     window.roomDataStore[roomId].live = {};
-                    console.log(`[DataStore] Cleared history and live data for offline room: ${roomId}`);
                 }
                 const statusDot = document.getElementById(`status-dot-${roomId}`);
                 if (statusDot) {
@@ -4989,7 +4684,7 @@
                 }
                 const updatedEl = document.getElementById(`updated-${roomId}`);
                 if (updatedEl) {
-                    updatedEl.textContent = 'Offline';
+                    updatedEl.textContent = '';
                 }
                 const tempCard = document.getElementById(`temp-${roomId}`)?.closest('.metric-card');
                 const rhCard = document.getElementById(`rh-${roomId}`)?.closest('.metric-card');
@@ -5008,11 +4703,30 @@
                     rhCard.className = 'metric-card rounded-xl shadow p-4 bg-gradient-to-r from-slate-500 to-slate-600 text-white text-center flex flex-col justify-center';
                 }
                 setRoomCardsBlank(roomId, true);
+                console.log(`--- Starting Modal Offline Check for room: "${roomId}" ---`);
                 const detailModal = document.getElementById('modal-room-detail');
-                if (detailModal && !detailModal.classList.contains('hidden') && detailModal.dataset.currentRoom === roomId) {
-                    console.log(`[UI Reset] Forcing detail modal update for offline room: ${roomId}`);
-                    resetDetailModalUI(roomId);
+                if (!detailModal) {
+                    console.error("DEBUG: Cannot find the modal element with ID 'modal-room-detail'.");
+                    return;
                 }
+                const isHidden = detailModal.classList.contains('hidden');
+                const modalRoomId = detailModal.dataset.currentRoom;
+                console.log(`DEBUG: Is modal hidden? ==> ${isHidden}`);
+                console.log(`DEBUG: Modal is currently open for room: ==> "${modalRoomId}"`);
+                console.log(`DEBUG: The offline event is for room: ==> "${roomId}"`);
+                if (!isHidden && modalRoomId === roomId) {
+                    console.log("%cSUCCESS: Conditions met. Calling resetDetailModalUI now.", "color: lightgreen; font-weight: bold;");
+                    resetDetailModalUI(roomId);
+                } else {
+                    console.error("FAILURE: Conditions NOT met. The modal UI will not be updated.");
+                    if (isHidden) {
+                        console.error("Reason: Modal is considered hidden.");
+                    }
+                    if (modalRoomId !== roomId) {
+                        console.error(`Reason: Mismatch in room IDs. Modal shows "${modalRoomId}", but event is for "${roomId}".`);
+                    }
+                }
+                console.log("--- Finished Modal Offline Check ---");
             }
             function pushHistorySample(roomId, sample) {
                 if (!window.roomDataStore) {
@@ -5230,10 +4944,8 @@
                     const res = await fetch('/api/notification-settings', { cache: 'no-store' });
                     if (!res.ok) throw new Error('Failed to fetch settings');
                     const data = await res.json();
-
                     notificationEmails = data.recipients?.email || [];
                     telegramChatIds = data.recipients?.telegram || [];
-
                     const schedule = data.schedule;
                     if (schedule && schedule.weekdays?.length === 7 && Array.isArray(schedule.configs) && schedule.configs.length > 0) {
                         scheduleWeekdays = schedule.weekdays;
@@ -5263,15 +4975,12 @@
                     }
                 );
                 if (!confirmed) return;
-
                 const statusEl = document.getElementById('recipients-status');
                 statusEl.textContent = 'Saving...';
-
                 const payload = {
                     recipients: { email: notificationEmails, telegram: telegramChatIds },
                     schedule: { weekdays: scheduleWeekdays, configs: scheduleConfigs }
                 };
-
                 try {
                     const res = await fetch('/api/notification-settings', {
                         method: 'POST',
@@ -5303,7 +5012,6 @@
                 const inputEl = document.getElementById(`recipient-input-${type}`);
                 const panelEl = document.getElementById(`${type}-dropdown-panel`);
                 const actionBtn = document.getElementById(`recipient-action-${type}`);
-
                 const renderDropdown = () => {
                     panelEl.innerHTML = '';
                     itemsArray.forEach(item => {
@@ -5313,12 +5021,10 @@
                         panelEl.appendChild(itemEl);
                     });
                 };
-
                 inputEl.addEventListener('focus', () => {
                     renderDropdown();
                     panelEl.classList.remove('hidden');
                 });
-
                 actionBtn.addEventListener('click', () => {
                     const value = inputEl.value.trim();
                     if (value && validationFn(value)) {
@@ -5333,7 +5039,6 @@
                         showPopup('Invalid format.', { type: 'warn' });
                     }
                 });
-
                 panelEl.addEventListener('click', (e) => {
                     if (e.target.classList.contains('item-delete-btn')) {
                         const valueToDelete = e.target.dataset.value;
@@ -5344,13 +5049,11 @@
                         }
                     }
                 });
-
                 document.addEventListener('click', (e) => {
                     if (!container.contains(e.target)) {
                         panelEl.classList.add('hidden');
                     }
                 }, true);
-
                 renderDropdown();
             }
             function renderScheduleDays() {
@@ -5370,7 +5073,6 @@
                 const container = document.getElementById('schedule-list');
                 if (!container) return;
                 container.innerHTML = '';
-
                 scheduleConfigs.forEach((config, index) => {
                     const div = document.createElement('div');
                     div.className = 'p-3 bg-[var(--panel-2)] rounded-lg border border-[var(--border)] space-y-2';
@@ -5405,7 +5107,6 @@
                 loadNotificationSettings();
                 openModal('modal-recipients');
             });
-
             document.getElementById('schedule-weekdays')?.addEventListener('click', (e) => {
                 const btn = e.target.closest('.weekday-btn');
                 if (!btn) return;
@@ -5413,12 +5114,10 @@
                 scheduleWeekdays[index] = !scheduleWeekdays[index];
                 btn.classList.toggle('active');
             });
-
             document.getElementById('schedule-add-btn')?.addEventListener('click', () => {
                 scheduleConfigs.push({ sendAt: "17:00", rangeStart: "08:00", rangeEnd: "17:00" });
                 renderSchedules();
             });
-
             document.getElementById('schedule-list')?.addEventListener('change', (e) => {
                 if (e.target.classList.contains('schedule-input')) {
                     const index = parseInt(e.target.dataset.index, 10);
@@ -5428,7 +5127,6 @@
                     }
                 }
             });
-
             document.getElementById('schedule-list')?.addEventListener('click', e => {
                 const btn = e.target.closest('.remove-item-btn');
                 if (!btn) return;
@@ -5436,7 +5134,6 @@
                 scheduleConfigs.splice(index, 1);
                 renderSchedules();
             });
-
             document.getElementById('btn-save-notification-settings')?.addEventListener('click', saveNotificationSettings);
             function dewPointC_Magnus(Tc, RHpct) {
                 const T = Number(Tc), RH = Number(RHpct);
@@ -5634,10 +5331,8 @@
                     console.warn('uibuilder is undefined');
                     return false;
                 }
-
                 const actionId = uuid();
                 const unlock = lockQA(`Sending command ${cmd}...`);
-
                 try {
                     uibuilder.send({
                         topic: `actions/${cmd}`,
@@ -5648,9 +5343,7 @@
                             meta: { by: 'web', ts: Date.now(), ver: 1 }
                         }
                     });
-
                     const res = await waitForAction(actionId, 60000);
-
                     const target = roomName ? `${roomName}` : '';
                     if (res?.ok) {
                         showPopup(`${cmd} ${target} succeeded.`, { type: 'success' });
@@ -5668,7 +5361,6 @@
                     unlock();
                 }
             }
-
             function getCommonChartOptions() {
                 return {
                     responsive: true,
@@ -5865,7 +5557,10 @@
                 if (document.activeElement?.blur) document.activeElement.blur();
             }
             async function openRoomDetailModal(roomId) {
+                const modalEl = document.getElementById('modal-room-detail');
+                if (!modalEl) return;
                 openModal('modal-room-detail');
+                modalEl.dataset.currentRoom = roomId;
                 const roomToMacMap = {};
                 Object.entries(window.MAC_TO_ROOM_MAP || {}).forEach(([mac, rId]) => {
                     roomToMacMap[rId] = mac;
@@ -6156,7 +5851,6 @@
                 const roomName = roomId === 'all' ? 'All Devices' : (window.ROOM_NAMES?.[roomId] || roomId);
                 const safeClose = () => { try { closeModal('modal-reboot'); } catch { } };
                 const roomToMac = window.ROOM_TO_MAC_MAP || {};
-
                 if (roomId === 'all') {
                     const onlineMacs = ['room-a', 'room-b', 'room-c', 'room-d']
                         .map(rId => {
@@ -6166,12 +5860,10 @@
                             return (mac && isOnline) ? mac : null;
                         })
                         .filter(Boolean);
-
                     if (onlineMacs.length === 0) {
                         showPopup('No online devices to reboot.', { type: 'fail' });
                         return;
                     }
-
                     const confirmed = await showConfirmationModal(
                         'Confirm Reboot All',
                         `This will send a reboot command to <strong>${onlineMacs.length} online device(s)</strong>. Are you sure?`, {
@@ -6181,25 +5873,21 @@
                         iconColorClass: 'text-red-400'
                     }
                     );
-
                     if (!confirmed) return;
                     safeClose();
                     showPopup(`Sending reboot command to ${onlineMacs.length} online device(s)...`, { type: 'info', timeout: 5000 });
                 } else {
                     const mac = normalizeMAC(roomToMac[roomId] || '');
-
                     if (!mac) {
                         showPopup(`Device is not mapped for ${roomName}. Please check Device Map settings.`, { type: 'fail' });
                         return;
                     }
-
                     const statusDot = document.getElementById(`status-dot-${roomId}`);
                     const isOnline = statusDot && statusDot.classList.contains('led--green');
                     if (!isOnline) {
                         showPopup(`Cannot reboot: ${roomName} is offline.`, { type: 'fail' });
                         return;
                     }
-
                     const confirmed = await showConfirmationModal(
                         'Confirm Reboot',
                         `Are you sure you want to reboot <strong>${roomName}</strong>? This action is irreversible.`, {
@@ -6209,15 +5897,11 @@
                         iconColorClass: 'text-red-400'
                     }
                     );
-
                     if (!confirmed) return;
-
                     safeClose();
                     sendAction('Reboot', { room_id: roomId, mac }, roomName);
                 }
             });
-
-
             document.querySelector('#form-export select[name="range"]')?.addEventListener('change', e => {
                 const block = document.getElementById('export-custom');
                 if (block) block.classList.toggle('hidden', e.target.value !== 'custom');
@@ -6432,13 +6116,11 @@
                                 sensor_connectivity: 'Sensor Status'
                             };
                             const metricText = metricMap[data.metric] || data.metric;
-
                             if (data.type === 'triggered') {
                                 const level = data.level;
                                 const toastType = level === 'critical' ? 'fail' : 'warn';
                                 let message = '';
                                 const sensorName = data.sensor_name || 'Unknown Sensor';
-
                                 if (data.metric === 'connectivity') {
                                     message = `${level.toUpperCase()} in ${roomName}: Device is now Offline.`;
                                 } else if (data.metric === 'sensor_connectivity') {
@@ -6449,11 +6131,9 @@
                                     message = `${level.toUpperCase()} in ${roomName}: ${sensorName} ${metricText} is ${value}${unit}.`;
                                 }
                                 showPopup(message, { type: toastType, timeout: 10000 });
-
                             } else if (data.type === 'recovered') {
                                 let message = '';
                                 const sensorName = data.sensor_name || 'Unknown Sensor';
-
                                 if (data.metric === 'connectivity') {
                                     message = `Recovery in ${roomName}: Device is back online.`;
                                 } else if (data.metric === 'sensor_connectivity') {
@@ -6476,7 +6156,6 @@
                         return;
                     }
                     if (topic === 'uibuilder') return;
-
                     if (topic === 'pin_status_update') {
                         const statuses = Array.isArray(msg.payload) ? msg.payload : [];
                         let changed = false;
@@ -6880,12 +6559,10 @@
                     connectivity: 'Connectivity',
                     sensor_connectivity: 'Sensor Connectivity'
                 };
-
                 const filteredAlerts = allAlertsCache.filter(alert => {
                     const pinMap = window.MAC_PIN_NAMES?.[alert.mac] || {};
                     const customSensorName = pinMap[`name_pin_${alert.sensor_name}`] || alert.sensor_name;
                     const displayMetric = (metricMap[alert.metric] || alert.metric).toLowerCase();
-
                     const inSearch = searchTerm === '' ||
                         (alert.opened_at?.toLowerCase().includes(searchTerm)) ||
                         (alert.room_name?.toLowerCase().includes(searchTerm)) ||
@@ -6898,12 +6575,9 @@
                         (alert.ack_by?.toLowerCase().includes(searchTerm)) ||
                         (alert.ack_note?.toLowerCase().includes(searchTerm)) ||
                         (alert.mac?.toLowerCase().includes(searchTerm));
-
                     const inLevel = level === '' || alert.level === level;
-
                     return inSearch && inLevel;
                 });
-
                 renderAlertTable(filteredAlerts);
             }
             function renderAlertTable(alerts) {
@@ -7708,5 +7382,4 @@
             class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">0</span>
     </button>
 </body>
-
 </html>
