@@ -7031,6 +7031,12 @@
                 const ackNote = ackNoteInput.value.trim();
                 const eventIds = JSON.parse(modal.dataset.eventIds || '[]');
                 if (!ackBy) {
+                    errorEl.textContent = 'Please fill in the name of the acknowledge';
+                    errorEl.classList.remove('hidden');
+                    ackByInput.focus();
+                    return;
+                } else if (ackBy.toLowerCase() === 'system') {
+                    errorEl.textContent = 'The name ‘System’ cannot be used.';
                     errorEl.classList.remove('hidden');
                     ackByInput.focus();
                     return;
