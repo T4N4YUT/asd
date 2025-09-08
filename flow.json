@@ -1,5 +1,825 @@
 [
     {
+        "id": "6d5ddc6b8286095b",
+        "type": "subflow",
+        "name": "Daily Report",
+        "info": "Trigger -> load notification settings -> check schedule & resolve window -> fetch device/pin maps -> build mappers -> build & run queries -> compose email + CSV -> send",
+        "category": "",
+        "in": [
+            {
+                "x": 60,
+                "y": 120,
+                "wires": [
+                    {
+                        "id": "f1dd0cdb302de4b4"
+                    }
+                ]
+            }
+        ],
+        "out": [],
+        "env": [
+            {
+                "name": "BASE_URL",
+                "type": "str",
+                "value": "http://localhost:1880"
+            },
+            {
+                "name": "TZ",
+                "type": "str",
+                "value": "Asia/Bangkok"
+            },
+            {
+                "name": "EXPORT_PATH",
+                "type": "str",
+                "value": "/api/export"
+            }
+        ],
+        "meta": {},
+        "color": "#DDAA99",
+        "status": {
+            "x": 2080,
+            "y": 260,
+            "wires": []
+        }
+    },
+    {
+        "id": "f1dd0cdb302de4b4",
+        "type": "http request",
+        "z": "6d5ddc6b8286095b",
+        "name": "GET /api/notification-settings",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:1880/api/notification-settings",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 260,
+        "y": 120,
+        "wires": [
+            [
+                "4155af29a44ee150"
+            ]
+        ]
+    },
+    {
+        "id": "4155af29a44ee150",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Check Schedule & Resolve Window",
+        "func": "// ใช้ dayjs จาก global\nconst dayjs = global.get('dayjs');\nif (!dayjs) { node.error('Day.js not loaded to global context'); return null; }\nconst tz = env.get('TZ') || 'Asia/Bangkok';\nconst now = dayjs().tz(tz);\nconst settings = msg.payload || {};\nmsg.recipients = settings.recipients || { email: [], telegram: [] };\nif (!settings.schedule || !settings.schedule.configs) { node.status({fill:'grey',shape:'ring',text:'No schedule'}); return null; }\nconst todayWeekday = now.day();\nconst activeConfigs = settings.schedule.configs.filter(c => (c.active===undefined?true:c.active) && settings.schedule.weekdays?.[todayWeekday]);\nif (!activeConfigs.length) { node.status({fill:'grey',shape:'ring',text:'No active schedule today'}); return null; }\nconst config = activeConfigs[0];\nfunction toToday(hm){ const [H,M]=String(hm||'00:00').split(':').map(Number); return dayjs().tz(tz).hour(H).minute(M).second(0).millisecond(0); }\nconst S = toToday(config.rangeStart);\nconst E = toToday(config.rangeEnd);\nconst T = toToday(config.sendAt);\nconst diff = now.diff(T,'minute');\nif (diff !== 0) { node.status({fill:'blue',shape:'ring',text:`Waiting ${T.format('HH:mm')}`}); return null; }\nlet startTs, endTs;\nif (config.rangeStart === config.rangeEnd){\n  endTs = E; if (T.isBefore(E)) endTs = endTs.subtract(1,'day');\n  startTs = endTs.subtract(24,'hour');\n}else{\n  endTs = E; let startCandidate = S; if (E.isBefore(S)) startCandidate = S.subtract(1,'day');\n  if (T.isBefore(E)){ endTs = endTs.subtract(1,'day'); startCandidate = startCandidate.subtract(1,'day'); }\n  startTs = startCandidate;\n}\nmsg.window = {\n  start: startTs.format('YYYY-MM-DD HH:mm:ss'),\n  end: endTs.format('YYYY-MM-DD HH:mm:ss'),\n  startISO: startTs.toISOString(),\n  endISO: endTs.toISOString(),\n  displayRange: `${config.rangeStart}–${config.rangeEnd}`,\n  reportDate: endTs.format('DD/MM/YYYY')\n};\nmsg.attachmentName = `daily_report_${endTs.format('DDMMYYYY')}.csv`;\nnode.status({fill:'green',shape:'dot',text:`Run ${msg.window.displayRange}`});\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 120,
+        "wires": [
+            [
+                "90cc6dff43d8119b",
+                "bf26a40a41be6cc5"
+            ]
+        ]
+    },
+    {
+        "id": "90cc6dff43d8119b",
+        "type": "http request",
+        "z": "6d5ddc6b8286095b",
+        "name": "GET /api/device-map",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:1880/api/device-map",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 310,
+        "y": 200,
+        "wires": [
+            [
+                "142856d8e6db0804"
+            ]
+        ]
+    },
+    {
+        "id": "bf26a40a41be6cc5",
+        "type": "http request",
+        "z": "6d5ddc6b8286095b",
+        "name": "GET /api/pin-map",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:1880/api/pin-map",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 300,
+        "y": 260,
+        "wires": [
+            [
+                "ec849689791e409f"
+            ]
+        ]
+    },
+    {
+        "id": "142856d8e6db0804",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "topic=deviceMap",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "deviceMap",
+                "tot": "str"
+            }
+        ],
+        "x": 520,
+        "y": 200,
+        "wires": [
+            [
+                "a3f4e9b45571eb11"
+            ]
+        ]
+    },
+    {
+        "id": "ec849689791e409f",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "topic=pinMap",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "pinMap",
+                "tot": "str"
+            }
+        ],
+        "x": 510,
+        "y": 260,
+        "wires": [
+            [
+                "a3f4e9b45571eb11"
+            ]
+        ]
+    },
+    {
+        "id": "a3f4e9b45571eb11",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "EnsureBothMaps",
+        "func": "const key = msg.topic;\nconst buf = flow.get('mapsBuf') || {};\nbuf[key] = msg.payload;\nflow.set('mapsBuf', buf);\nif (!buf.deviceMap || !buf.pinMap) return null;\nconst out = { payload: { deviceMap: buf.deviceMap, pinMap: buf.pinMap } };\nflow.set('mapsBuf', {});\n// พกต่อ msg.window/msg.recipients ไปด้วย\nout.window = msg.window;\nout.recipients = msg.recipients;\nout.attachmentName = msg.attachmentName;\nreturn out;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 230,
+        "wires": [
+            [
+                "79912f7fabd8dca1"
+            ]
+        ]
+    },
+    {
+        "id": "79912f7fabd8dca1",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Build Mappers",
+        "func": "let deviceMap = msg.payload && msg.payload.deviceMap;\nlet pinMap = msg.payload && msg.payload.pinMap;\nif ((!deviceMap || !pinMap) && Array.isArray(msg.payload)){\n  const a=msg.payload[0], b=msg.payload[1];\n  const looks=(o)=>o&&typeof o==='object'&&Object.keys(o).some(k=>/^room[A-G]$/.test(k)||/^name[A-G]$/.test(k));\n  if (looks(a)){ deviceMap=a; pinMap=b; } else if (looks(b)){ deviceMap=b; pinMap=a; }\n}\nif (!deviceMap || typeof deviceMap!=='object'){ node.error('Device map missing'); return null; }\nif (!pinMap || typeof pinMap!=='object'){ node.error('Pin map missing'); return null; }\nfunction buildMacToRoom(map){ const out={}; for(const L of ['A','B','C','D','E','F','G']){ const mac=(map[`room${L}`]||'').trim(); const name=(map[`name${L}`]||'').trim(); if (mac&&name) out[mac]=name; } return out; }\nfunction sensorName(mac,pin){ const byMac = pinMap[mac]||{}; const n = byMac[pin]; return n && String(n).trim()? n : `PIN ${pin}`; }\nmsg.macToRoom = buildMacToRoom(deviceMap);\nmsg.roomToMac = Object.fromEntries(Object.entries(msg.macToRoom).map(([mac,room])=>[room,mac]));\nmsg.allMacs = Object.keys(msg.macToRoom);\nmsg.sensorName = (mac,p)=>sensorName(mac,p);\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 360,
+        "wires": [
+            [
+                "ba8f0f7775fc7420",
+                "37fbbd3bbd51acc1",
+                "9ec0b30a66aa13a5",
+                "46be75ddfa08b645"
+            ]
+        ]
+    },
+    {
+        "id": "ba8f0f7775fc7420",
+        "type": "template",
+        "z": "6d5ddc6b8286095b",
+        "name": "Build Query: Rules",
+        "field": "topic",
+        "template": "SELECT * FROM alert_rules;",
+        "output": "str",
+        "x": 1030,
+        "y": 300,
+        "wires": [
+            [
+                "a07aa44cabcbba3a"
+            ]
+        ]
+    },
+    {
+        "id": "37fbbd3bbd51acc1",
+        "type": "template",
+        "z": "6d5ddc6b8286095b",
+        "name": "Build Query: Stats",
+        "field": "topic",
+        "fieldType": "msg",
+        "syntax": "mustache",
+        "template": "SELECT mac, pin,\n    AVG(avg_temp) as avg_temp, MIN(min_temp) as min_temp, MAX(max_temp) as max_temp,\n    AVG(avg_hum) as avg_hum, MIN(min_hum) as min_hum, MAX(max_hum) as max_hum\nFROM dht_22\nWHERE `timestamp` >= '{{window.start}}' AND `timestamp` < '{{window.end}}'\nGROUP BY mac, pin\n\nUNION ALL\n\nSELECT mac, 'OVERALL' as pin,\n    AVG(avg_temp) as avg_temp, MIN(min_temp) as min_temp, MAX(max_temp) as max_temp,\n    AVG(avg_hum) as avg_hum, MIN(min_hum) as min_hum, MAX(max_hum) as max_hum\nFROM dht_22\nWHERE `timestamp` >= '{{window.start}}' AND `timestamp` < '{{window.end}}'\nGROUP BY mac;",
+        "output": "str",
+        "x": 1030,
+        "y": 380,
+        "wires": [
+            [
+                "dbbe65bc4c52610b"
+            ]
+        ]
+    },
+    {
+        "id": "9ec0b30a66aa13a5",
+        "type": "template",
+        "z": "6d5ddc6b8286095b",
+        "name": "Build Query: Times",
+        "field": "topic",
+        "fieldType": "msg",
+        "syntax": "mustache",
+        "template": "-- Robust min/max time picking in local time (Asia/Bangkok window)\n-- Per-sensor\nSELECT\n  t.mac,\n  t.pin,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac AND l.pin = t.pin\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.min_temp ASC, l.`timestamp` ASC LIMIT 1) AS time_min_temp,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac AND l.pin = t.pin\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.max_temp DESC, l.`timestamp` ASC LIMIT 1) AS time_max_temp,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac AND l.pin = t.pin\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.min_hum ASC, l.`timestamp` ASC LIMIT 1) AS time_min_hum,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac AND l.pin = t.pin\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.max_hum DESC, l.`timestamp` ASC LIMIT 1) AS time_max_hum\nFROM (\n  SELECT mac, pin\n  FROM dht_22\n  WHERE `timestamp` >= '{{window.start}}' AND `timestamp` < '{{window.end}}'\n  GROUP BY mac, pin\n) AS t\n\nUNION ALL\n\n-- OVERALL per mac\nSELECT\n  t.mac,\n  'OVERALL' AS pin,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.min_temp ASC, l.`timestamp` ASC LIMIT 1) AS time_min_temp,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.max_temp DESC, l.`timestamp` ASC LIMIT 1) AS time_max_temp,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.min_hum ASC, l.`timestamp` ASC LIMIT 1) AS time_min_hum,\n  (SELECT l.`timestamp` FROM dht_22 l\n    WHERE l.mac = t.mac\n      AND l.`timestamp` >= '{{window.start}}' AND l.`timestamp` < '{{window.end}}'\n    ORDER BY l.max_hum DESC, l.`timestamp` ASC LIMIT 1) AS time_max_hum\nFROM (\n  SELECT mac\n  FROM dht_22\n  WHERE `timestamp` >= '{{window.start}}' AND `timestamp` < '{{window.end}}'\n  GROUP BY mac\n) AS t;",
+        "output": "str",
+        "x": 1030,
+        "y": 420,
+        "wires": [
+            [
+                "2ef53e8552b70db2"
+            ]
+        ]
+    },
+    {
+        "id": "a07aa44cabcbba3a",
+        "type": "mysql",
+        "z": "6d5ddc6b8286095b",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Fetch Rules",
+        "x": 1290,
+        "y": 300,
+        "wires": [
+            [
+                "86269550a6d4b448"
+            ]
+        ]
+    },
+    {
+        "id": "949f82e57c3ebd90",
+        "type": "mysql",
+        "z": "6d5ddc6b8286095b",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Fetch Events",
+        "x": 1280,
+        "y": 340,
+        "wires": [
+            [
+                "de85dccbe9eb685c"
+            ]
+        ]
+    },
+    {
+        "id": "dbbe65bc4c52610b",
+        "type": "mysql",
+        "z": "6d5ddc6b8286095b",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Compute Stats",
+        "x": 1280,
+        "y": 380,
+        "wires": [
+            [
+                "579f19ac9fadceb1"
+            ]
+        ]
+    },
+    {
+        "id": "2ef53e8552b70db2",
+        "type": "mysql",
+        "z": "6d5ddc6b8286095b",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Get Min/Max Times",
+        "x": 1280,
+        "y": 420,
+        "wires": [
+            [
+                "01f596b99e0927c0"
+            ]
+        ]
+    },
+    {
+        "id": "86269550a6d4b448",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "topic=rules",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "rules",
+                "tot": "str"
+            }
+        ],
+        "x": 1850,
+        "y": 300,
+        "wires": [
+            [
+                "aa9c9b424521686d"
+            ]
+        ]
+    },
+    {
+        "id": "de85dccbe9eb685c",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "topic=events",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "events",
+                "tot": "str"
+            }
+        ],
+        "x": 1850,
+        "y": 340,
+        "wires": [
+            [
+                "aa9c9b424521686d"
+            ]
+        ]
+    },
+    {
+        "id": "579f19ac9fadceb1",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "topic=stats",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "stats",
+                "tot": "str"
+            }
+        ],
+        "x": 1850,
+        "y": 380,
+        "wires": [
+            [
+                "aa9c9b424521686d"
+            ]
+        ]
+    },
+    {
+        "id": "01f596b99e0927c0",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "topic=statTimes",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "statTimes",
+                "tot": "str"
+            }
+        ],
+        "x": 1860,
+        "y": 420,
+        "wires": [
+            [
+                "aa9c9b424521686d"
+            ]
+        ]
+    },
+    {
+        "id": "aa9c9b424521686d",
+        "type": "join",
+        "z": "6d5ddc6b8286095b",
+        "name": "Join All Data",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "useparts": true,
+        "accumulate": false,
+        "timeout": "",
+        "count": "4",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 2060,
+        "y": 360,
+        "wires": [
+            [
+                "6fd4f0f9a42e5ad6"
+            ]
+        ]
+    },
+    {
+        "id": "6fd4f0f9a42e5ad6",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Process & Structure Data",
+        "func": "// Process & Structure Data\nconst { rules, events, stats, statTimes } = msg.payload;\n\n// สร้างช่วงค่า warn/crit สำหรับทั้งระดับห้องและระดับเซ็นเซอร์\nfunction buildRanges(rules) {\n    const out = { room: {}, sensor: {} };\n    for (const r of (rules || [])) {\n        const rng = {\n            warn: { min: r.warn_min, max: r.warn_max },\n            crit: { min: r.crit_min, max: r.crit_max }\n        };\n        if (r.scope === 'room' && r.sensor_name === 'overall') {\n            out.room[r.metric] = rng;          // ตัวอย่าง: out.room.temp, out.room.hum\n        } else if (r.scope === 'sensor') {\n            out.sensor[`${r.mac}|${r.sensor_name}|${r.metric}`] = rng;\n        }\n    }\n    return out;\n}\n\nmsg.accept = buildRanges(rules || []);\n\n// ฟังก์ชันตัดสินสถานะตามเกณฑ์\nfunction judge(v, r) {\n    if (v == null || !r) return 'unknown';\n    const w = r.warn, c = r.crit;\n    if (c && ((c.min != null && v < c.min) || (c.max != null && v > c.max))) return 'critical';\n    if (w && ((w.min != null && v < w.min) || (w.max != null && v > w.max))) return 'warning';\n    return 'ok';\n}\n\nconst em = { ok: '✅', warning: '⚠️', critical: '❌', unknown: '❓' };\nconst tz = env.get('TZ') || 'Asia/Bangkok';\n\nmsg.rooms = [];\n\nfor (const mac of (msg.allMacs || [])) {\n    const roomName = msg.macToRoom[mac];\n\n    const room = { name: roomName, mac, overall: {}, sensors: [], alerts: [] };\n\n    // OVERALL (per mac)\n    const overallStat = (stats || []).find(s => s.mac === mac && s.pin === 'OVERALL') || {};\n    const overallTimes = (statTimes || []).find(s => s.mac === mac && s.pin === 'OVERALL') || {};\n    room.overall = { ...overallStat, ...overallTimes };\n\n    // รายเซ็นเซอร์\n    const sensorStats = (stats || []).filter(s => s.mac === mac && s.pin !== 'OVERALL');\n    for (const ss of sensorStats) {\n        const sName = msg.sensorName(mac, ss.pin);\n        const sTimes = (statTimes || []).find(s => s.mac === mac && s.pin === ss.pin) || {};\n        const tRule = msg.accept.sensor[`${mac}|${sName}|temp`];\n        const hRule = msg.accept.sensor[`${mac}|${sName}|hum`];\n        const tStat = judge(ss.avg_temp, tRule);\n        const hStat = judge(ss.avg_hum, hRule);\n\n        room.sensors.push({\n            ...ss,\n            ...sTimes,\n            name: sName,\n            temp_status: tStat,\n            hum_status: hStat,\n            temp_status_emoji: em[tStat],\n            hum_status_emoji: em[hStat]\n        });\n    }\n\n    // จัดเรียงรายเซ็นเซอร์ตามหมายเลข pin ให้สวยงาม\n    room.sensors.sort((a, b) => String(a.pin).localeCompare(String(b.pin), undefined, { numeric: true }));\n\n    // สถานะรวมของห้อง\n    const oT = judge(room.overall.avg_temp, msg.accept.room.temp);\n    const oH = judge(room.overall.avg_hum, msg.accept.room.hum);\n    room.overall.temp_status = oT;\n    room.overall.hum_status = oH;\n    room.overall.temp_status_emoji = em[oT];\n    room.overall.hum_status_emoji = em[oH];\n\n    // สร้าง Alert Log แล้ว \"เรียง sensor_name -> เวลา\"\n    room.alerts = (events || [])\n        .filter(e => e.mac === mac)\n        .map(e => {\n            const a = { ...e };\n\n            if (e.metric === 'temp') {\n                a.metric_desc = 'อุณหภูมิ';\n                a.unit = '°C';\n            } else if (e.metric === 'hum') {\n                a.metric_desc = 'ความชื้น';\n                a.unit = '%';\n            } else if (e.metric === 'sensor_connectivity' || e.metric === 'connectivity') {\n                // กระชับข้อความการเชื่อมต่อ\n                a.metric_desc = 'การเชื่อมต่อ';\n                a.unit = '';\n                a.trigger_value = (e.trigger_value == 0) ? 'ออฟไลน์' : 'ออนไลน์';\n            } else {\n                a.metric_desc = e.metric;\n                a.unit = '';\n            }\n\n            // เก็บ timestamp แบบตัวเลขไว้ใช้ sort ให้แม่น\n            a.opened_at_ts = new Date(e.opened_at).getTime();\n            a.time = new Date(e.opened_at).toLocaleTimeString('th-TH', {\n                hour: '2-digit',\n                minute: '2-digit',\n                timeZone: tz\n            });\n\n            return a;\n        })\n        .sort((x, y) =>\n            x.sensor_name.localeCompare(y.sensor_name, undefined, { numeric: true }) ||\n            (x.opened_at_ts - y.opened_at_ts)  // เวลา ASC\n        );\n\n    msg.rooms.push(room);\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2300,
+        "y": 360,
+        "wires": [
+            [
+                "b86a5038e2abdd91",
+                "a9b1c2d3e4f5a6b7"
+            ]
+        ]
+    },
+    {
+        "id": "b86a5038e2abdd91",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Compose Email Body",
+        "func": "// --- Helper Functions ---\nfunction fmtNum(n, u = '', p = 1) {\n    if (n == null) return 'N/A';\n    return u ? `${Number(n).toFixed(p)}${u}` : Number(n).toFixed(p);\n}\nfunction fmtTime(t) {\n    if (!t) return '—';\n    const d = new Date(t);\n    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: env.get('TZ') || 'Asia/Bangkok' });\n}\nfunction getStatusClass(status) {\n    if (status === 'critical') return 'status-critical';\n    if (status === 'warning') return 'status-warning';\n    return 'status-ok';\n}\n\n// --- Summary Line Function ---\nfunction getSummaryLine(room) {\n    if (!room.alerts || room.alerts.length === 0) {\n        if (room.overall.temp_status === 'critical' || room.overall.hum_status === 'critical') return '❌ <strong>สถานะโดยรวมวิกฤติ</strong>';\n        if (room.overall.temp_status === 'warning' || room.overall.hum_status === 'warning') return '⚠️ <strong>สถานะโดยรวมต้องเฝ้าระวัง</strong>';\n        return '✅ <strong>สถานะ: ปกติทั้งหมด</strong> - ระบบทำงานเป็นปกติ ไม่พบปัญหาใดๆ';\n    }\n    const alertsByGroup = room.alerts.reduce((acc, alert) => {\n        const key = `${alert.level}|${alert.metric_desc}`;\n        if (!acc[key]) { acc[key] = { level: alert.level, metric_desc: alert.metric_desc, sensors: new Set() }; }\n        acc[key].sensors.add(alert.sensor_name);\n        return acc;\n    }, {});\n    const groups = Object.values(alertsByGroup);\n    const criticalGroups = groups.filter(g => g.level === 'critical');\n    const warningGroups = groups.filter(g => g.level === 'warning');\n    const groupsToShow = [...criticalGroups, ...warningGroups];\n    if (groupsToShow.length === 0) { return '✅ <strong>สถานะ: ปกติทั้งหมด</strong>'; }\n    const summaryLines = groupsToShow.map(group => {\n        const sensorList = `<strong>${Array.from(group.sensors).join(', ')}</strong>`;\n        if (group.metric_desc.includes('การเชื่อมต่อ')) {\n            return `🔌 <strong>เซ็นเซอร์ออฟไลน์ที่ตำแหน่ง:</strong> ${sensorList}`;\n        } else {\n            const emoji = group.level === 'critical' ? '❌' : '⚠️';\n            return `${emoji} <strong>${group.metric_desc}ผิดปกติที่ตำแหน่ง:</strong> ${sensorList}`;\n        }\n    });\n    return summaryLines.join('<br>');\n}\n\n// --- CSS Styles (*** REDESIGNED FOR MODERN LOOK ***) ---\nconst styles = `\n<style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n        font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;\n        color: #343a40;\n        background-color: #f8f9fa;\n        line-height: 1.6;\n        -webkit-font-smoothing: antialiased;\n        -moz-osx-font-smoothing: grayscale;\n        padding: 25px;\n    }\n    .email-container {\n        max-width: 850px;\n        margin: 0 auto;\n        background: #ffffff;\n        border-radius: 12px;\n        box-shadow: 0 10px 30px rgba(0,0,0,0.07);\n        overflow: hidden;\n        border: 1px solid #e9ecef;\n    }\n    .header {\n        background: linear-gradient(135deg, #0d6efd 0%, #004aad 100%);\n        color: white;\n        padding: 40px 30px;\n        text-align: center;\n    }\n    .header h1 {\n        font-size: 30px;\n        font-weight: 600;\n        margin-bottom: 8px;\n        letter-spacing: 0.5px;\n    }\n    .header .date-info {\n        font-size: 15px;\n        opacity: 0.9;\n    }\n    .content { padding: 35px; }\n    .room-section {\n        margin-bottom: 35px;\n        border-radius: 12px;\n        overflow: hidden;\n        border: 1px solid #e9ecef;\n        background: #ffffff;\n    }\n    .room-header {\n        background-color: #f1f7ff;\n        color: #004aad;\n        padding: 18px 25px;\n        font-size: 20px;\n        font-weight: 600;\n        border-bottom: 1px solid #dee2e6;\n    }\n    .room-content { padding: 25px; }\n    .summary-box {\n        border-radius: 8px;\n        padding: 20px;\n        margin-bottom: 25px;\n        border-left: 5px solid;\n        font-size: 16px;\n    }\n    .summary-box strong { font-weight: 600; }\n    .summary-box-ok { background-color: #e8f5e9; border-color: #28a745; color: #155724; }\n    .summary-box-warn { background-color: #fff3cd; border-color: #ffc107; color: #856404; }\n    .summary-box-crit { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }\n    .section-title {\n        font-size: 18px;\n        font-weight: 600;\n        color: #0056b3;\n        margin-top: 10px;\n        margin-bottom: 15px;\n        padding-bottom: 8px;\n        border-bottom: 2px solid #e9ecef;\n    }\n    table {\n        width: 100%;\n        border-collapse: collapse;\n        margin-bottom: 20px;\n    }\n    th {\n        background-color: #f8f9fa;\n        color: #495057;\n        padding: 14px 12px;\n        font-weight: 600;\n        font-size: 13px;\n        text-transform: uppercase;\n        letter-spacing: 0.5px;\n        text-align: center;\n        border-bottom: 2px solid #dee2e6;\n    }\n    td {\n        padding: 14px 12px;\n        text-align: center;\n        font-size: 14px;\n        border-bottom: 1px solid #e9ecef;\n        color: #495057;\n    }\n    tr:nth-child(even) td {\n        background-color: #f8f9fa; /* Zebra-striping */\n    }\n    tr:last-child td { border-bottom: none; }\n    td.status-ok { background-color: #e6f7d4 !important; }\n    td.status-warning { background-color: #fff6d9 !important; }\n    td.status-critical { background-color: #ffe4e0 !important; }\n    tr.status-ok td { background-color: #e6f7d4; }\n    tr.status-warning td { background-color: #fff6d9; }\n    tr.status-critical td { background-color: #ffe4e0; }\n    .metric-icon { font-size: 18px; margin-right: 8px; vertical-align: middle; }\n    .footer {\n        background: #f8f9fa;\n        color: #6c757d;\n        border-top: 1px solid #dee2e6;\n        padding: 25px;\n        text-align: center;\n        font-size: 12px;\n    }\n    small { color: #6c757d; font-size: 12px; }\n</style>\n`;\n\n\n// --- Build HTML Body ---\nlet html = `<!DOCTYPE html><html><head><title>Daily Report</title><meta charset=\\\"UTF-8\\\">${styles}</head><body>`;\nhtml += `<div class=\\\"email-container\\\">`;\n\n// 1. Header\nhtml += `\n<div class=\\\"header\\\">\n    <h1>📊 รายงานสรุปประจำวัน</h1>\n    <div class=\\\"date-info\\\">\n        <strong>วันที่:</strong> ${msg.window.reportDate} | <strong>ช่วงเวลา:</strong> ${msg.window.displayRange}\n    </div>\n</div>`;\n\nhtml += `<div class=\\\"content\\\">`;\n\n// Loop through each room\nfor (const r of msg.rooms) {\n    html += `<div class=\\\"room-section\\\">`;\n    html += `<div class=\\\"room-header\\\">🏢 ${r.name}</div>`;\n    html += `<div class=\\\"room-content\\\">`;\n\n    // 2. Summary Box\n    const summaryText = getSummaryLine(r);\n    let summaryClass = 'summary-box-ok';\n    if (summaryText.includes('❌') || summaryText.includes('🔌')) summaryClass = 'summary-box-crit';\n    else if (summaryText.includes('⚠️')) summaryClass = 'summary-box-warn';\n    html += `<div class=\\\"summary-box ${summaryClass}\\\">${summaryText}</div>`;\n\n    // 3. Overall Status Table\n    html += `<div class=\\\"section-title\\\">📈 สถานะโดยรวม</div>`;\n    html += `<table>\n        <tr>\n            <th>Metric</th>\n            <th>เฉลี่ย</th>\n            <th>สูงสุด (เวลา)</th>\n            <th>ต่ำสุด (เวลา)</th>\n            <th>สถานะ</th>\n        </tr>\n        <tr>\n            <td><span class=\\\"metric-icon\\\">🌡️</span>อุณหภูมิ</td>\n            <td>${fmtNum(r.overall.avg_temp, '°C')}</td>\n            <td>${fmtNum(r.overall.max_temp, '°C')} (${fmtTime(r.overall.time_max_temp)})</td>\n            <td>${fmtNum(r.overall.min_temp, '°C')} (${fmtTime(r.overall.time_min_temp)})</td>\n            <td class=\\\"${getStatusClass(r.overall.temp_status)}\\\">${r.overall.temp_status_emoji}</td>\n        </tr>\n        <tr>\n            <td><span class=\\\"metric-icon\\\">💧</span>ความชื้น</td>\n            <td>${fmtNum(r.overall.avg_hum, '%')}</td>\n            <td>${fmtNum(r.overall.max_hum, '%')} (${fmtTime(r.overall.time_max_hum)})</td>\n            <td>${fmtNum(r.overall.min_hum, '%')} (${fmtTime(r.overall.time_min_hum)})</td>\n            <td class=\\\"${getStatusClass(r.overall.hum_status)}\\\">${r.overall.hum_status_emoji}</td>\n        </tr>\n    </table>`;\n\n    // 4. Sensor Details Table\n    if (r.sensors.length > 0) {\n        html += `<div class=\\\"section-title\\\">🔍 รายละเอียดเซ็นเซอร์</div>`;\n        html += `<table>\n            <tr>\n                <th>ตำแหน่ง</th>\n                <th>อุณหภูมิ (ต่ำสุด-สูงสุด)</th>\n                <th>สถานะ</th>\n                <th>ความชื้น (ต่ำสุด-สูงสุด)</th>\n                <th>สถานะ</th>\n            </tr>`;\n        for (const s of r.sensors) {\n            const tempDetail = `${fmtNum(s.avg_temp, '°C')} <small>(${fmtNum(s.min_temp, '', 1)}–${fmtNum(s.max_temp, '', 1)})</small>`;\n            const humDetail = `${fmtNum(s.avg_hum, '%')} <small>(${fmtNum(s.min_hum, '', 1)}–${fmtNum(s.max_hum, '', 1)})</small>`;\n            html += `<tr>\n                <td>${s.name}</td>\n                <td>${tempDetail}</td>\n                <td class=\\\"${getStatusClass(s.temp_status)}\\\">${s.temp_status_emoji}</td>\n                <td>${humDetail}</td>\n                <td class=\\\"${getStatusClass(s.hum_status)}\\\">${s.hum_status_emoji}</td>\n            </tr>`;\n        }\n        html += `</table>`;\n    }\n\n    // 5. Alert Log Table\n    if (r.alerts.length > 0) {\n        html += `<div class=\\\"section-title\\\">🚨 Alert Log</div>`;\n        html += `<table>\n            <tr>\n                <th>เวลา</th>\n                <th>ตำแหน่ง</th>\n                <th>รายละเอียด</th>\n            </tr>`;\n        for (const a of r.alerts) {\n            const alertDetail = `${a.metric_desc}: <strong>${a.trigger_value}${a.unit || ''}</strong> <small>${a.reason || ''}</small>`;\n            html += `<tr class=\\\"${getStatusClass(a.level)}\\\">\n                <td>${a.time}</td>\n                <td>${a.sensor_name}</td>\n                <td style=\\\"text-align:left;\\\">${alertDetail}</td>\n            </tr>`;\n        }\n        html += `</table>`;\n    }\n    html += `</div></div>`;\n}\n\nhtml += `</div>`; // End .content\n\n// 6. Footer\nconst genAt = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: env.get('TZ') || 'Asia/Bangkok' });\nhtml += `<div class=\\\"footer\\\">\n    <div>รายงานนี้สร้างโดยระบบอัตโนมัติ เวลา ${genAt}</div>\n    <div>ไฟล์แนบ: ${msg.attachmentName || 'ไม่มี'}</div>\n</div>`;\nhtml += `</div></body></html>`; // End .email-container\n\n// --- Final msg object ---\nmsg.payload = html;\nmsg.topic = `[📢 Daily Report] ประจำวันที่ ${msg.window.reportDate} (${msg.window.displayRange})`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2550,
+        "y": 360,
+        "wires": [
+            [
+                "3cee4dec5268f711"
+            ]
+        ]
+    },
+    {
+        "id": "3cee4dec5268f711",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "Store Email Body",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "emailTextBody",
+                "tot": "msg"
+            }
+        ],
+        "x": 2780,
+        "y": 360,
+        "wires": [
+            [
+                "a1b2c3d4e5f6a7b8"
+            ]
+        ]
+    },
+    {
+        "id": "1ead6238e08fee12",
+        "type": "http request",
+        "z": "6d5ddc6b8286095b",
+        "name": "GET CSV",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "query",
+        "url": "http://localhost:1880/api/export?start={{window.start}}&end={{window.end}}&macs={{allMacs}}",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 3200,
+        "y": 360,
+        "wires": [
+            [
+                "1b2f1d4a145429c5"
+            ]
+        ]
+    },
+    {
+        "id": "1b2f1d4a145429c5",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Prepare Attachment + To",
+        "func": "msg.attachments=[{ filename: msg.attachmentName, content: msg.payload, contentType: 'text/csv' }];\nmsg.payload = msg.emailTextBody; // body\n// set recipients to msg.to (comma separated)\nconst emails = (msg.recipients && Array.isArray(msg.recipients.email)) ? msg.recipients.email : [];\nif (emails.length) msg.to = emails.join(',');\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3400,
+        "y": 360,
+        "wires": [
+            [
+                "6705ace90aa6e3cd"
+            ]
+        ]
+    },
+    {
+        "id": "6705ace90aa6e3cd",
+        "type": "e-mail",
+        "z": "6d5ddc6b8286095b",
+        "server": "smtp.gmail.com",
+        "port": "465",
+        "authtype": "BASIC",
+        "saslformat": false,
+        "token": "oauth2Response.access_token",
+        "secure": true,
+        "tls": false,
+        "name": "armtanayuts@gmail.com",
+        "dname": "Send Email",
+        "x": 3640,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "46be75ddfa08b645",
+        "type": "template",
+        "z": "6d5ddc6b8286095b",
+        "name": "Build Query: Events",
+        "field": "topic",
+        "fieldType": "msg",
+        "syntax": "mustache",
+        "template": "SELECT *\nFROM alert_events\nWHERE opened_at >= '{{window.start}}'\n  AND opened_at <  '{{window.end}}'\nORDER BY mac, sensor_name, opened_at ASC;\n",
+        "output": "str",
+        "x": 1030,
+        "y": 340,
+        "wires": [
+            [
+                "949f82e57c3ebd90"
+            ]
+        ]
+    },
+    {
+        "id": "a1b2c3d4e5f6a7b8",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "Prepare CSV Params",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.from",
+                "pt": "msg",
+                "to": "window.start",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.to",
+                "pt": "msg",
+                "to": "window.end",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.type",
+                "pt": "msg",
+                "to": "csv",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload.room",
+                "pt": "msg",
+                "to": "all",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 3000,
+        "y": 360,
+        "wires": [
+            [
+                "1ead6238e08fee12"
+            ]
+        ]
+    },
+    {
+        "id": "a9b1c2d3e4f5a6b7",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Compose Telegram Message",
+        "func": "// ตรวจสอบว่ามีผู้รับ Telegram หรือไม่\nconst telegramRecipients = msg.recipients?.telegram;\nif (!telegramRecipients || telegramRecipients.length === 0) {\n    return null;\n}\n\n// --- Helper Functions ---\nfunction fmtNum(n, u = '', p = 1) {\n    if (n == null) return 'N/A';\n    return u ? `${Number(n).toFixed(p)}${u}` : Number(n).toFixed(p);\n}\nfunction fmtTime(t) {\n    if (!t) return '—';\n    const d = new Date(t);\n    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: env.get('TZ') || 'Asia/Bangkok' });\n}\n\n// --- ส่วนสร้างเนื้อหาข้อความทั้งหมด ---\nconst lines = [];\nlines.push(`*📊 รายงานสรุปประจำวัน*`);\nlines.push(`*วันที่:* ${msg.window.reportDate} | *ช่วงเวลา:* ${msg.window.displayRange}`);\nlines.push(''); // เว้นบรรทัด\n\n// วนลูปสำหรับแต่ละห้อง\nfor (const r of msg.rooms) {\n    lines.push(`*🏢 สถานะห้อง: ${r.name}*`);\n    lines.push('-------------------------------------');\n\n    // สรุปภาพรวมของห้อง\n    lines.push(`*🌡️ อุณหภูมิโดยรวม*`);\n    lines.push(`> • เฉลี่ย: \\`${fmtNum(r.overall.avg_temp, '°C')}\\` ${r.overall.temp_status_emoji}`);\n    lines.push(`> • สูงสุด: \\`${fmtNum(r.overall.max_temp, '°C')}\\` (เวลา ${fmtTime(r.overall.time_max_temp)})`);\n    lines.push(`> • ต่ำสุด: \\`${fmtNum(r.overall.min_temp, '°C')}\\` (เวลา ${fmtTime(r.overall.time_min_temp)})`);\n    lines.push('');\n\n    lines.push(`*💧 ความชื้นโดยรวม*`);\n    lines.push(`> • เฉลี่ย: \\`${fmtNum(r.overall.avg_hum, '%')}\\` ${r.overall.hum_status_emoji}`);\n    lines.push(`> • สูงสุด: \\`${fmtNum(r.overall.max_hum, '%')}\\` (เวลา ${fmtTime(r.overall.time_max_hum)})`);\n    lines.push(`> • ต่ำสุด: \\`${fmtNum(r.overall.min_hum, '%')}\\` (เวลา ${fmtTime(r.overall.time_min_hum)})`);\n    lines.push('');\n\n    // Alert Log ของห้อง\n    if (r.alerts && r.alerts.length > 0) {\n        lines.push(`*🚨 Alert Log (${r.alerts.length} เหตุการณ์)*`);\n        for (const a of r.alerts) {\n            const levelEmoji = a.level === 'critical' ? '‼️' : '⚠️';\n            let desc = '';\n\n            if (a.metric === 'status') {\n                // การเชื่อมต่อ (offline/online)\n                desc = `${a.sensor_name}: การเชื่อมต่อ ${a.trigger_value === 'offline' ? 'ออฟไลน์' : 'ออนไลน์'}`;\n            } else {\n                // metric ปกติ เช่น temp/hum\n                desc = `${a.sensor_name}: ${a.metric_desc} ${a.trigger_value}${a.unit || ''}`;\n            }\n\n            lines.push(`> \\`${a.time}\\` ${levelEmoji} ${desc}`);\n        }\n    } else {\n        lines.push(`*🚨 Alert Log*`);\n        lines.push(`> ✅ ไม่พบเหตุการณ์ผิดปกติ`);\n    }\n    lines.push(''); // เว้นบรรทัดใหญ่ท้ายห้อง\n}\n\n// นำข้อความที่สร้างมาเก็บไว้ใน msg.telegramMessage\nmsg.telegramMessage = lines.join('\\n');\n\n// ส่งต่อ Chat IDs ของผู้รับไปให้ Split node\nmsg.payload = telegramRecipients;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2920,
+        "y": 820,
+        "wires": [
+            [
+                "b1c2d3e4f5a6b7c8"
+            ]
+        ]
+    },
+    {
+        "id": "b1c2d3e4f5a6b7c8",
+        "type": "split",
+        "z": "6d5ddc6b8286095b",
+        "name": "Split Recipients",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "property": "payload",
+        "x": 3180,
+        "y": 820,
+        "wires": [
+            [
+                "c2d3e4f5a6b7c8d9"
+            ]
+        ]
+    },
+    {
+        "id": "d3e4f5a6b7c8d9e0",
+        "type": "telegram sender",
+        "z": "6d5ddc6b8286095b",
+        "name": "Send Telegram",
+        "bot": "8b7e9a04f4c59556",
+        "haserroroutput": false,
+        "outputs": 1,
+        "x": 3620,
+        "y": 820,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c2d3e4f5a6b7c8d9",
+        "type": "change",
+        "z": "6d5ddc6b8286095b",
+        "name": "Prepare Telegram Msg",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "chatId",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{}",
+                "tot": "json"
+            },
+            {
+                "t": "move",
+                "p": "chatId",
+                "pt": "msg",
+                "to": "payload.chatId",
+                "tot": "msg"
+            },
+            {
+                "t": "move",
+                "p": "telegramMessage",
+                "pt": "msg",
+                "to": "payload.content",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "payload.type",
+                "pt": "msg",
+                "to": "message",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload.options.parse_mode",
+                "pt": "msg",
+                "to": "Markdown",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 3420,
+        "y": 1020,
+        "wires": [
+            [
+                "d3e4f5a6b7c8d9e0"
+            ]
+        ]
+    },
+    {
+        "id": "fd8b8234a952baf9",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Process & Structure Data",
+        "func": "// Process & Structure Data\nconst { rules, events, stats, statTimes } = msg.payload;\n\n// สร้างช่วงค่า warn/crit สำหรับทั้งระดับห้องและระดับเซ็นเซอร์\nfunction buildRanges(rules) {\n    const out = { room: {}, sensor: {} };\n    for (const r of (rules || [])) {\n        const rng = {\n            warn: { min: r.warn_min, max: r.warn_max },\n            crit: { min: r.crit_min, max: r.crit_max }\n        };\n        if (r.scope === 'room' && r.sensor_name === 'overall') {\n            out.room[r.metric] = rng;          // ตัวอย่าง: out.room.temp, out.room.hum\n        } else if (r.scope === 'sensor') {\n            out.sensor[`${r.mac}|${r.sensor_name}|${r.metric}`] = rng;\n        }\n    }\n    return out;\n}\n\nmsg.accept = buildRanges(rules || []);\n\n// ฟังก์ชันตัดสินสถานะตามเกณฑ์\nfunction judge(v, r) {\n    if (v == null || !r) return 'unknown';\n    const w = r.warn, c = r.crit;\n    if (c && ((c.min != null && v < c.min) || (c.max != null && v > c.max))) return 'critical';\n    if (w && ((w.min != null && v < w.min) || (w.max != null && v > w.max))) return 'warning';\n    return 'ok';\n}\n\nconst em = { ok: '✅', warning: '⚠️', critical: '❌', unknown: '❓' };\nconst tz = env.get('TZ') || 'Asia/Bangkok';\n\nmsg.rooms = [];\n\nfor (const mac of (msg.allMacs || [])) {\n    const roomName = msg.macToRoom[mac];\n\n    const room = { name: roomName, mac, overall: {}, sensors: [], alerts: [] };\n\n    // OVERALL (per mac)\n    const overallStat = (stats || []).find(s => s.mac === mac && s.pin === 'OVERALL') || {};\n    const overallTimes = (statTimes || []).find(s => s.mac === mac && s.pin === 'OVERALL') || {};\n    room.overall = { ...overallStat, ...overallTimes };\n\n    // รายเซ็นเซอร์\n    const sensorStats = (stats || []).filter(s => s.mac === mac && s.pin !== 'OVERALL');\n    for (const ss of sensorStats) {\n        const sName = msg.sensorName(mac, ss.pin);\n        const sTimes = (statTimes || []).find(s => s.mac === mac && s.pin === ss.pin) || {};\n        const tRule = msg.accept.sensor[`${mac}|${sName}|temp`];\n        const hRule = msg.accept.sensor[`${mac}|${sName}|hum`];\n        const tStat = judge(ss.avg_temp, tRule);\n        const hStat = judge(ss.avg_hum, hRule);\n\n        room.sensors.push({\n            ...ss,\n            ...sTimes,\n            name: sName,\n            temp_status: tStat,\n            hum_status: hStat,\n            temp_status_emoji: em[tStat],\n            hum_status_emoji: em[hStat]\n        });\n    }\n\n    // จัดเรียงรายเซ็นเซอร์ตามหมายเลข pin ให้สวยงาม\n    room.sensors.sort((a, b) => String(a.pin).localeCompare(String(b.pin), undefined, { numeric: true }));\n\n    // สถานะรวมของห้อง\n    const oT = judge(room.overall.avg_temp, msg.accept.room.temp);\n    const oH = judge(room.overall.avg_hum, msg.accept.room.hum);\n    room.overall.temp_status = oT;\n    room.overall.hum_status = oH;\n    room.overall.temp_status_emoji = em[oT];\n    room.overall.hum_status_emoji = em[oH];\n\n    // สร้าง Alert Log แล้ว \"เรียง sensor_name -> เวลา\"\n    room.alerts = (events || [])\n        .filter(e => e.mac === mac)\n        .map(e => {\n            const a = { ...e };\n\n            if (e.metric === 'temp') {\n                a.metric_desc = 'อุณหภูมิ';\n                a.unit = '°C';\n            } else if (e.metric === 'hum') {\n                a.metric_desc = 'ความชื้น';\n                a.unit = '%';\n            } else if (e.metric === 'sensor_connectivity' || e.metric === 'connectivity') {\n                // กระชับข้อความการเชื่อมต่อ\n                a.metric_desc = 'การเชื่อมต่อ';\n                a.unit = '';\n                a.trigger_value = (e.trigger_value == 0) ? 'ออฟไลน์' : 'ออนไลน์';\n            } else {\n                a.metric_desc = e.metric;\n                a.unit = '';\n            }\n\n            // เก็บ timestamp แบบตัวเลขไว้ใช้ sort ให้แม่น\n            a.opened_at_ts = new Date(e.opened_at).getTime();\n            a.time = new Date(e.opened_at).toLocaleTimeString('th-TH', {\n                hour: '2-digit',\n                minute: '2-digit',\n                timeZone: tz\n            });\n\n            return a;\n        })\n        .sort((x, y) =>\n            x.sensor_name.localeCompare(y.sensor_name, undefined, { numeric: true }) ||\n            (x.opened_at_ts - y.opened_at_ts)  // เวลา ASC\n        );\n\n    msg.rooms.push(room);\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2290,
+        "y": 840,
+        "wires": [
+            [
+                "5f0d467be47ce752"
+            ]
+        ]
+    },
+    {
+        "id": "5f0d467be47ce752",
+        "type": "function",
+        "z": "6d5ddc6b8286095b",
+        "name": "Compose Email Body",
+        "func": "// --- Helper Functions ---\nfunction fmtNum(n, u = '', p = 1) {\n    if (n == null) return 'N/A';\n    return u ? `${Number(n).toFixed(p)}${u}` : Number(n).toFixed(p);\n}\nfunction fmtTime(t) {\n    if (!t) return '—';\n    const d = new Date(t);\n    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: env.get('TZ') || 'Asia/Bangkok' });\n}\nfunction getStatusClass(status) {\n    if (status === 'critical') return 'status-critical';\n    if (status === 'warning') return 'status-warning';\n    return 'status-ok';\n}\n\n// --- Summary Line Function ---\nfunction getSummaryLine(room) {\n    if (!room.alerts || room.alerts.length === 0) {\n        if (room.overall.temp_status === 'critical' || room.overall.hum_status === 'critical') return '❌ <strong>สถานะโดยรวมวิกฤติ</strong>';\n        if (room.overall.temp_status === 'warning' || room.overall.hum_status === 'warning') return '⚠️ <strong>สถานะโดยรวมต้องเฝ้าระวัง</strong>';\n        return '✅ <strong>สถานะ: ปกติทั้งหมด</strong> - ระบบทำงานเป็นปกติ ไม่พบปัญหาใดๆ';\n    }\n    const alertsByGroup = room.alerts.reduce((acc, alert) => {\n        const key = `${alert.level}|${alert.metric_desc}`;\n        if (!acc[key]) { acc[key] = { level: alert.level, metric_desc: alert.metric_desc, sensors: new Set() }; }\n        acc[key].sensors.add(alert.sensor_name);\n        return acc;\n    }, {});\n    const groups = Object.values(alertsByGroup);\n    const criticalGroups = groups.filter(g => g.level === 'critical');\n    const warningGroups = groups.filter(g => g.level === 'warning');\n    const groupsToShow = [...criticalGroups, ...warningGroups];\n    if (groupsToShow.length === 0) { return '✅ <strong>สถานะ: ปกติทั้งหมด</strong>'; }\n    const summaryLines = groupsToShow.map(group => {\n        const sensorList = `<strong>${Array.from(group.sensors).join(', ')}</strong>`;\n        if (group.metric_desc.includes('การเชื่อมต่อ')) {\n            return `🔌 <strong>เซ็นเซอร์ออฟไลน์ที่ตำแหน่ง:</strong> ${sensorList}`;\n        } else {\n            const emoji = group.level === 'critical' ? '❌' : '⚠️';\n            return `${emoji} <strong>${group.metric_desc}ผิดปกติที่ตำแหน่ง:</strong> ${sensorList}`;\n        }\n    });\n    return summaryLines.join('<br>');\n}\n\n// --- CSS Styles (*** MODIFIED FOR CLARITY ***) ---\nconst styles = `\n<style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body { font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; color: #2c3e50; background: #f4f7f6; min-height: 100vh; padding: 20px; }\n    .email-container { max-width: 900px; margin: 0 auto; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }\n    .header { background: linear-gradient(135deg, #485461 0%, #28313b 100%); color: white; padding: 40px 30px; text-align: center; position: relative; }\n    .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 10px; }\n    .header .date-info { font-size: 16px; opacity: 0.9; }\n    .content { padding: 30px; }\n    .room-section { margin-bottom: 30px; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.08); background: white; }\n    .room-header { background-color: #f8f9fa; color: #343a40; padding: 20px 25px; font-size: 22px; font-weight: 600; border-bottom: 1px solid #dee2e6; }\n    .room-content { padding: 25px; }\n    .summary-box { border-radius: 12px; padding: 20px; margin-bottom: 25px; border-left: 5px solid; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }\n    .summary-box-ok { background-color: #e8f5e9; border-color: #28a745; color: #155724; }\n    .summary-box-warn { background-color: #fff3cd; border-color: #ffc107; color: #856404; }\n    .summary-box-crit { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }\n    .section-title { font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef; }\n    \n    /* --- Table Style Modifications --- */\n    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }\n    th {\n        background-color: #e9ecef; color: #495057; padding: 16px 12px;\n        font-weight: 600; font-size: 14px; text-align: center;\n        border-bottom: 2px solid #ced4da; /* 1. Added thicker line under header */\n    }\n    td {\n        padding: 14px 12px; text-align: center; font-size: 14px;\n        border-bottom: 1px solid #dee2e6; /* 2. Darkened row separator line */\n        background: white;\n    }\n    /* 3. Added vertical column lines */\n    th:not(:last-child),\n    td:not(:last-child) {\n        border-right: 1px solid #dee2e6;\n    }\n    tr:last-child td { border-bottom: none; }\n    /* --- End Table Style Modifications --- */\n\n    td.status-ok { background-color: #f1f8e9; }\n    td.status-warning { background-color: #fffde7; }\n    td.status-critical { background-color: #fff1f0; }\n    tr.status-ok { background-color: #f1f8e9; }\n    tr.status-warning { background-color: #fffde7; }\n    tr.status-critical { background-color: #fff1f0; }\n    .metric-icon { font-size: 18px; margin-right: 8px; vertical-align: middle; }\n    .footer { background: #2c3e50; color: #bdc3c7; padding: 25px; text-align: center; font-size: 12px; line-height: 1.6; }\n    small { color: #6c757d; font-size: 12px; }\n</style>\n`;\n\n// --- Build HTML Body ---\nlet html = `<!DOCTYPE html><html><head><title>Daily Report</title><meta charset=\\\"UTF-8\\\">${styles}</head><body>`;\nhtml += `<div class=\\\"email-container\\\">`;\n\n// 1. Header\nhtml += `\n<div class=\\\"header\\\">\n    <h1>📊 รายงานสรุปประจำวัน</h1>\n    <div class=\\\"date-info\\\">\n        <strong>วันที่:</strong> ${msg.window.reportDate} | <strong>ช่วงเวลา:</strong> ${msg.window.displayRange}\n    </div>\n</div>`;\n\nhtml += `<div class=\\\"content\\\">`;\n\n// Loop through each room\nfor (const r of msg.rooms) {\n    html += `<div class=\\\"room-section\\\">`;\n    html += `<div class=\\\"room-header\\\">🏢 ${r.name}</div>`;\n    html += `<div class=\\\"room-content\\\">`;\n\n    // 2. Summary Box\n    const summaryText = getSummaryLine(r);\n    let summaryClass = 'summary-box-ok';\n    if (summaryText.includes('❌') || summaryText.includes('🔌')) summaryClass = 'summary-box-crit';\n    else if (summaryText.includes('⚠️')) summaryClass = 'summary-box-warn';\n    html += `<div class=\\\"summary-box ${summaryClass}\\\">${summaryText}</div>`;\n\n    // 3. Overall Status Table\n    html += `<div class=\\\"section-title\\\">📈 สถานะโดยรวม</div>`;\n    html += `<table>\n        <tr>\n            <th>Metric</th>\n            <th>เฉลี่ย</th>\n            <th>สูงสุด (เวลา)</th>\n            <th>ต่ำสุด (เวลา)</th>\n            <th>สถานะ</th>\n        </tr>\n        <tr>\n            <td><span class=\\\"metric-icon\\\">🌡️</span>อุณหภูมิ</td>\n            <td>${fmtNum(r.overall.avg_temp, '°C')}</td>\n            <td>${fmtNum(r.overall.max_temp, '°C')} (${fmtTime(r.overall.time_max_temp)})</td>\n            <td>${fmtNum(r.overall.min_temp, '°C')} (${fmtTime(r.overall.time_min_temp)})</td>\n            <td class=\\\"${getStatusClass(r.overall.temp_status)}\\\">${r.overall.temp_status_emoji}</td>\n        </tr>\n        <tr>\n            <td><span class=\\\"metric-icon\\\">💧</span>ความชื้น</td>\n            <td>${fmtNum(r.overall.avg_hum, '%')}</td>\n            <td>${fmtNum(r.overall.max_hum, '%')} (${fmtTime(r.overall.time_max_hum)})</td>\n            <td>${fmtNum(r.overall.min_hum, '%')} (${fmtTime(r.overall.time_min_hum)})</td>\n            <td class=\\\"${getStatusClass(r.overall.hum_status)}\\\">${r.overall.hum_status_emoji}</td>\n        </tr>\n    </table>`;\n\n    // 4. Sensor Details Table\n    if (r.sensors.length > 0) {\n        html += `<div class=\\\"section-title\\\">🔍 รายละเอียดเซ็นเซอร์</div>`;\n        html += `<table>\n            <tr>\n                <th>ตำแหน่ง</th>\n                <th>อุณหภูมิ (ต่ำสุด-สูงสุด)</th>\n                <th>สถานะ</th>\n                <th>ความชื้น (ต่ำสุด-สูงสุด)</th>\n                <th>สถานะ</th>\n            </tr>`;\n        for (const s of r.sensors) {\n            const tempDetail = `${fmtNum(s.avg_temp, '°C')} <small>(${fmtNum(s.min_temp, '', 1)}–${fmtNum(s.max_temp, '', 1)})</small>`;\n            const humDetail = `${fmtNum(s.avg_hum, '%')} <small>(${fmtNum(s.min_hum, '', 1)}–${fmtNum(s.max_hum, '', 1)})</small>`;\n            html += `<tr>\n                <td>${s.name}</td>\n                <td>${tempDetail}</td>\n                <td class=\\\"${getStatusClass(s.temp_status)}\\\">${s.temp_status_emoji}</td>\n                <td>${humDetail}</td>\n                <td class=\\\"${getStatusClass(s.hum_status)}\\\">${s.hum_status_emoji}</td>\n            </tr>`;\n        }\n        html += `</table>`;\n    }\n\n    // 5. Alert Log Table\n    if (r.alerts.length > 0) {\n        html += `<div class=\\\"section-title\\\">🚨 Alert Log</div>`;\n        html += `<table>\n            <tr>\n                <th>เวลา</th>\n                <th>ตำแหน่ง</th>\n                <th>รายละเอียด</th>\n            </tr>`;\n        for (const a of r.alerts) {\n            const alertDetail = `${a.metric_desc}: <strong>${a.trigger_value}${a.unit || ''}</strong> <small>${a.reason || ''}</small>`;\n            html += `<tr class=\\\"${getStatusClass(a.level)}\\\">\n                <td>${a.time}</td>\n                <td>${a.sensor_name}</td>\n                <td style=\\\"text-align:left;\\\">${alertDetail}</td>\n            </tr>`;\n        }\n        html += `</table>`;\n    }\n    html += `</div></div>`;\n}\n\nhtml += `</div>`;\n\n// 6. Footer\nconst genAt = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: env.get('TZ') || 'Asia/Bangkok' });\nhtml += `<div class=\\\"footer\\\">\n    <div>รายงานนี้สร้างโดยระบบอัตโนมัติ เวลา ${genAt}</div>\n    <div>ไฟล์แนบ: ${msg.attachmentName}</div>\n</div>`;\nhtml += `</div></body></html>`;\n\n// --- Final msg object ---\nmsg.payload = html;\nmsg.topic = `[📢 Daily Report] ประจำวันที่ ${msg.window.reportDate} (${msg.window.displayRange})`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2530,
+        "y": 840,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8b7e9a04f4c59556",
+        "type": "telegram bot",
+        "z": "6d5ddc6b8286095b",
+        "botname": "PCSGH_Server_Monitoring_Bot",
+        "usernames": "",
+        "chatids": "",
+        "baseapiurl": "",
+        "testenvironment": false,
+        "updatemode": "polling",
+        "pollinterval": 300,
+        "usesocks": false,
+        "sockshost": "",
+        "socksprotocol": "socks5",
+        "socksport": 6667,
+        "socksusername": "anonymous",
+        "sockspassword": "",
+        "bothost": "",
+        "botpath": "",
+        "localbothost": "0.0.0.0",
+        "localbotport": 8443,
+        "publicbotport": 8443,
+        "privatekey": "",
+        "certificate": "",
+        "useselfsignedcertificate": false,
+        "sslterminated": false,
+        "verboselogging": false
+    },
+    {
         "id": "c1a8b9f7.1d2e3f",
         "type": "subflow",
         "name": "Send Notification",
@@ -615,32 +1435,6 @@
         "h": 202
     },
     {
-        "id": "764e306119ec0e9d",
-        "type": "group",
-        "z": "640c6734fdac3595",
-        "name": "สำหรับ Daily Report",
-        "style": {
-            "stroke": "#ff0000",
-            "fill": "#ffbfbf",
-            "label": false
-        },
-        "nodes": [
-            "e6ece526bf9c5d21",
-            "eb744f586a753274",
-            "745071770a1a0681",
-            "3733a98c8c4bb892",
-            "2856459866b453a6",
-            "980e30697c2aab77",
-            "b86f5c06d6692e5c",
-            "e43561653a2a4834",
-            "1af88c9d1185d6d0"
-        ],
-        "x": 1568,
-        "y": 1239,
-        "w": 1024,
-        "h": 408
-    },
-    {
         "id": "3c7c28232df10c32",
         "type": "group",
         "z": "640c6734fdac3595",
@@ -691,6 +1485,58 @@
         "h": 408
     },
     {
+        "id": "98e9e0e68d946c03",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "name": "สำหรับ Daily Report",
+        "style": {
+            "stroke": "#ff0000",
+            "fill": "#ffbfbf",
+            "label": false
+        },
+        "nodes": [
+            "5a161bab6ea417fe",
+            "cd2adcf7949bf9e1",
+            "7486317ab6c9b407",
+            "0d6a099dec5a745d",
+            "835b9d24889b4401",
+            "037b2b044352cb94",
+            "70048c0d3169c8aa",
+            "7b56862680ba6de6",
+            "e1984132a490d2e9"
+        ],
+        "x": 1568,
+        "y": 1439,
+        "w": 984,
+        "h": 288
+    },
+    {
+        "id": "84793865084e2dd9",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "name": "สำหรับ Daily Report",
+        "style": {
+            "stroke": "#ff0000",
+            "fill": "#ffbfbf",
+            "label": false
+        },
+        "nodes": [
+            "ebc659433b207557",
+            "7823d711f1c7d90a",
+            "916fc029317d9013",
+            "00a783d5415baa0a",
+            "f9434f2fb6a8fe2a",
+            "077a60bd5939261f",
+            "a9a2a1f54adb707b",
+            "91bd6b074f720c83",
+            "f8a493ff7cd6611c"
+        ],
+        "x": 1468,
+        "y": 3219,
+        "w": 1164,
+        "h": 768
+    },
+    {
         "id": "f11085f09044723f",
         "type": "group",
         "z": "640c6734fdac3595",
@@ -712,33 +1558,6 @@
         "y": 739,
         "w": 452,
         "h": 182
-    },
-    {
-        "id": "1af88c9d1185d6d0",
-        "type": "group",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "dffe9683111bd2bf",
-            "96f558ac37e73c8c",
-            "c7f125caa48b240c",
-            "246c8e40ce7babbb",
-            "6d49eebc87817fad",
-            "c0de5b969db8c66c",
-            "66d954ac3dd73111",
-            "065747965f653d21",
-            "d2e3f4a5.b6c7d8",
-            "c1a2b3d4.e5f6g7",
-            "37327e22131dff6d"
-        ],
-        "x": 1594,
-        "y": 1399,
-        "w": 972,
-        "h": 222
     },
     {
         "id": "d12975fb6b8b5eb7",
@@ -766,6 +1585,63 @@
         "y": 2803.5078125,
         "w": 992,
         "h": 222
+    },
+    {
+        "id": "e1984132a490d2e9",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "55426d0f63020db5",
+            "6506649cc536d2f8",
+            "b06ddb5d8bc71c19",
+            "6b0b0398d197ace6"
+        ],
+        "x": 1594,
+        "y": 1599,
+        "w": 932,
+        "h": 102
+    },
+    {
+        "id": "f8a493ff7cd6611c",
+        "type": "group",
+        "z": "640c6734fdac3595",
+        "g": "84793865084e2dd9",
+        "name": "",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a23a95b84c3666c1",
+            "0bf363b53e66a04f",
+            "08c490b093196c3c",
+            "c5e977884cbb9ede",
+            "67f0585dc08c884e",
+            "72dad8984c3c3ec1",
+            "ec48ad5158e878f8",
+            "ecaa38d86995e353",
+            "8869744351249d15",
+            "b42a48065c40f13e",
+            "6399c2076c3de2ad",
+            "747e473d0659ed0c",
+            "0cb39f1c280edd91",
+            "1598d1930c6a3129",
+            "247cdec8f20e2910",
+            "cbc06f55fddabebe",
+            "1284b53d86ca0e5d",
+            "2e88d5c10846da07",
+            "ab9735b1f67a9747",
+            "3cf86c54e499f185",
+            "33e299b4862f41f8"
+        ],
+        "x": 1494,
+        "y": 3379,
+        "w": 1112,
+        "h": 582
     },
     {
         "id": "e06d098d363668d7",
@@ -1003,7 +1879,7 @@
         "g": "ba826875d50440fd",
         "name": "Every 1 sec",
         "props": [],
-        "repeat": "1",
+        "repeat": "5",
         "crontab": "",
         "once": true,
         "onceDelay": "5",
@@ -1442,8 +2318,7 @@
         "y": 780,
         "wires": [
             [
-                "6d0dbf7cb49c607c",
-                "2c25407253acdf41"
+                "6d0dbf7cb49c607c"
             ]
         ]
     },
@@ -2897,7 +3772,7 @@
         "wires": [
             [
                 "82779c738ad44c4b",
-                "91caa0124755236c"
+                "01e6798c16ebbf6c"
             ]
         ]
     },
@@ -2919,7 +3794,7 @@
         "wires": [
             [
                 "258f6bf27fc6e1cf",
-                "e7411741075bca07"
+                "848c0a14f3f98191"
             ]
         ]
     },
@@ -2970,8 +3845,7 @@
         "y": 1380,
         "wires": [
             [
-                "f3110649b75fa1f6",
-                "de4b14857ed56b43"
+                "f3110649b75fa1f6"
             ]
         ]
     },
@@ -3024,8 +3898,7 @@
         "y": 1380,
         "wires": [
             [
-                "7f021b2b6bf737d9",
-                "8e7c5761295f4dca"
+                "7f021b2b6bf737d9"
             ]
         ]
     },
@@ -3065,8 +3938,7 @@
         "y": 1380,
         "wires": [
             [
-                "a7081151ab3a2ad4",
-                "e49915b2a7082f86"
+                "a7081151ab3a2ad4"
             ]
         ]
     },
@@ -3296,209 +4168,9 @@
         ]
     },
     {
-        "id": "e6ece526bf9c5d21",
-        "type": "http in",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "GET /api/notification-settings",
-        "url": "/api/notification-settings",
-        "method": "get",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 1740,
-        "y": 1320,
-        "wires": [
-            [
-                "eb744f586a753274"
-            ]
-        ]
-    },
-    {
-        "id": "eb744f586a753274",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "Load Notification Settings",
-        "func": "// ดึงข้อมูลที่บันทึกไว้ ถ้าไม่มี ให้สร้างข้อมูลเริ่มต้นใน \"โครงสร้างใหม่\" ที่ถูกต้อง\nconst settings = flow.get('notificationSettings') || {\n    recipients: {\n        email: [],\n        telegram: []\n    },\n    schedule: {\n        weekdays: [true, true, true, true, true, true, true],\n        configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n    }\n};\n\nmsg.payload = settings;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1990,
-        "y": 1320,
-        "wires": [
-            [
-                "745071770a1a0681"
-            ]
-        ]
-    },
-    {
-        "id": "745071770a1a0681",
-        "type": "http response",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "200 OK",
-        "statusCode": "200",
-        "headers": {
-            "content-type": "application/json"
-        },
-        "x": 2180,
-        "y": 1320,
-        "wires": []
-    },
-    {
-        "id": "3733a98c8c4bb892",
-        "type": "http in",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "POST /api/notification-settings",
-        "url": "/api/notification-settings",
-        "method": "post",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 1740,
-        "y": 1360,
-        "wires": [
-            [
-                "2856459866b453a6"
-            ]
-        ]
-    },
-    {
-        "id": "2856459866b453a6",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "Validate & Set Defaults",
-        "func": "// msg.payload คือ JSON ที่ UI ส่งมา\nlet payload = msg.payload;\n\n// --- 1. ตรวจสอบ Recipients ---\nif (!payload.recipients) {\n    payload.recipients = { email: [], telegram: [] };\n}\nif (!Array.isArray(payload.recipients.email)) {\n    payload.recipients.email = [];\n}\nif (!Array.isArray(payload.recipients.telegram)) {\n    payload.recipients.telegram = [];\n}\n\n// --- 2. ตรวจสอบ Schedule (โครงสร้างใหม่) ---\nconst defaults = {\n    weekdays: [true, true, true, true, true, true, true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n};\n\nlet schedule = payload.schedule;\nlet isScheduleInvalid = true;\n\n// ตรวจสอบว่า schedule.configs เป็น Array ที่ถูกต้องหรือไม่\nif (schedule && Array.isArray(schedule.weekdays) && schedule.weekdays.length === 7 && Array.isArray(schedule.configs)) {\n    // ถ้าข้อมูลถูกต้อง (อาจจะเป็น Array ว่างก็ได้ ถ้าผู้ใช้ลบหมด)\n    isScheduleInvalid = false;\n}\n\n// ถ้าข้อมูลไม่ถูกต้อง ให้ใช้ค่า Default\nif (isScheduleInvalid) {\n    node.warn(\"Received empty or invalid schedule. Applying default settings.\");\n    payload.schedule = defaults;\n}\n\nmsg.payload = payload;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 2000,
-        "y": 1360,
-        "wires": [
-            [
-                "980e30697c2aab77"
-            ]
-        ]
-    },
-    {
-        "id": "980e30697c2aab77",
-        "type": "change",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "Save to Flow Context",
-        "rules": [
-            {
-                "t": "set",
-                "p": "notificationSettings",
-                "pt": "flow",
-                "to": "payload",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 2250,
-        "y": 1360,
-        "wires": [
-            [
-                "b86f5c06d6692e5c",
-                "96f558ac37e73c8c"
-            ]
-        ]
-    },
-    {
-        "id": "b86f5c06d6692e5c",
-        "type": "http response",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "200 OK",
-        "statusCode": "200",
-        "headers": {},
-        "x": 2450,
-        "y": 1360,
-        "wires": []
-    },
-    {
-        "id": "c7f125caa48b240c",
-        "type": "inject",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "On Deploy",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str",
-                "v": "load_schedule"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 1710,
-        "y": 1440,
-        "wires": [
-            [
-                "96f558ac37e73c8c"
-            ]
-        ]
-    },
-    {
-        "id": "96f558ac37e73c8c",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "Update Cron Schedule",
-        "func": "// Update Cron Schedule (patched)\n// สร้าง/ลบ schedule ใน cronplus ให้ยิงตาม UI settings\nconst DEFAULT_SETTINGS = {\n  recipients: { email: [], telegram: [] },\n  schedule: {\n    weekdays: [true,true,true,true,true,true,true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n  }\n};\n\n// โหลดค่า config\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n  node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n  settings = DEFAULT_SETTINGS;\n  flow.set(\"notificationSettings\", settings);\n}\n\n// วันในสัปดาห์ (0=Sun..6=Sat)\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst selectedDOW = weekdays\n  .map((isOn, idx) => isOn ? idx : -1)\n  .filter(v => v !== -1);\n\n// เคลียร์งานเก่าก่อน\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ไม่มีวันหรือไม่มีตารางเวลา → ลบแล้วจบ\nif (selectedDOW.length === 0 || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n  node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n  return [[removeAllMsg], null];\n}\n\n// ทำ string DOW\nconst daysOfWeekStr = selectedDOW.join(',');\n\n// timeZone ที่จะใช้ทั้งใน node และในคำสั่ง\nconst TZ = \"Asia/Bangkok\";\n\n// สร้าง job ใหม่ตามแต่ละ config\nconst crypto = (s)=> {\n  // แฮชจิ๋วกันชื่อชน (ไม่ต้องเอาจริงจัง)\n  let h = 0; for (let i=0;i<s.length;i++) h = ((h<<5)-h) + s.charCodeAt(i) | 0;\n  return Math.abs(h).toString(36).slice(0,5);\n};\n\nconst addMsgs = settings.schedule.configs\n  .filter(cfg => cfg && typeof cfg.sendAt === \"string\" && cfg.sendAt.includes(\":\"))\n  .map((cfg) => {\n    const [hourStr, minuteStr] = cfg.sendAt.split(\":\").map(s => String(s).trim());\n    const hour = String(parseInt(hourStr, 10));\n    const minute = String(parseInt(minuteStr, 10));\n\n    // cron 6 ฟิลด์: sec min hour dom month dow\n    const expression = `0 ${minute} ${hour} * * ${daysOfWeekStr}`;\n\n    // ทำชื่อ job ให้คงที่แต่ไม่ชนกันง่าย\n    const sig = `${hour}:${minute}|${daysOfWeekStr}|${cfg.rangeStart||''}-${cfg.rangeEnd||''}`;\n    const name = `digest-${crypto(sig)}`;\n\n    return {\n      payload: {\n        command: \"add\",\n        name,\n        expressionType: \"cron\",\n        expression,\n        timeZone: TZ,\n        // payload ที่ปล่อยตอนถึงเวลา ให้พก cfg ออกไปด้วย\n        payload: {\n          kind: \"daily-digest-trigger\",\n          schedule: { ...cfg, daysOfWeekStr, timeZone: TZ }\n        },\n        payloadType: \"json\"\n      }\n    };\n  });\n\n// ส่งออก: output1 = remove-all, output2 = add ทั้งหมด\nreturn [[removeAllMsg], addMsgs];\n",
-        "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1920,
-        "y": 1440,
-        "wires": [
-            [
-                "246c8e40ce7babbb"
-            ],
-            [
-                "246c8e40ce7babbb"
-            ]
-        ]
-    },
-    {
-        "id": "e43561653a2a4834",
-        "type": "comment",
-        "z": "640c6734fdac3595",
-        "g": "764e306119ec0e9d",
-        "name": "สำหรับ Daily Report",
-        "info": "",
-        "x": 1710,
-        "y": 1280,
-        "wires": []
-    },
-    {
         "id": "2a78b5cd6ba1b8d3",
         "type": "subflow:c1a8b9f7.1d2e3f",
         "z": "640c6734fdac3595",
-        "d": true,
         "g": "c7e3510948f6624e",
         "name": "",
         "x": 930,
@@ -3527,31 +4199,6 @@
         ]
     },
     {
-        "id": "246c8e40ce7babbb",
-        "type": "cronplus",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "Daily Digest Scheduler",
-        "outputField": "payload",
-        "timeZone": "Asia/Bangkok",
-        "storeName": "",
-        "commandResponseMsgOutput": "output2",
-        "defaultLocation": "",
-        "defaultLocationType": "default",
-        "outputs": 2,
-        "options": [],
-        "x": 2200,
-        "y": 1440,
-        "wires": [
-            [
-                "c0de5b969db8c66c"
-            ],
-            [
-                "c0de5b969db8c66c"
-            ]
-        ]
-    },
-    {
         "id": "57fe4cea096dc9a9",
         "type": "function",
         "z": "640c6734fdac3595",
@@ -3568,8 +4215,7 @@
         "y": 1320,
         "wires": [
             [
-                "417fa61902dccc67",
-                "31dfd1d1a484a46f"
+                "417fa61902dccc67"
             ]
         ]
     },
@@ -3716,170 +4362,6 @@
             ],
             [
                 "937c8093b89d17f4"
-            ]
-        ]
-    },
-    {
-        "id": "c0de5b969db8c66c",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "Prepare Daily Report Data",
-        "func": "// รับค่า schedule ที่ cronplus ส่งมา\nconst schedule = msg.payload.schedule || {};\nconst { rangeStart, rangeEnd } = schedule;\n\n// --- Helpers ---\nfunction getLocalTime(timeStr, baseDate) {\n  if (!timeStr) return null;\n  const [hour, minute] = timeStr.split(':');\n  const date = new Date(baseDate);\n  date.setHours(parseInt(hour, 10));\n  date.setMinutes(parseInt(minute, 10));\n  date.setSeconds(0);\n  date.setMilliseconds(0);\n  return date;\n}\nfunction toSqlFormat(date) {\n  const pad = (n) => String(n).padStart(2, '0');\n  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;\n}\n\n// คำนวณช่วงเวลาของ Report\nlet startDate, endDate;\nconst now = new Date();\n\nif (rangeStart > rangeEnd) { // ข้ามคืน เช่น 17:00 -> 08:00\n  const y = new Date(now.getTime() - 24 * 60 * 60 * 1000);\n  startDate = getLocalTime(rangeStart, y);\n  endDate = getLocalTime(rangeEnd, now);\n} else { // ภายในวันเดียว\n  startDate = getLocalTime(rangeStart, now);\n  endDate = getLocalTime(rangeEnd, now);\n}\nconst start_sql = toSqlFormat(startDate);\nconst end_sql = toSqlFormat(endDate);\nif (!start_sql || !end_sql) { node.error(\"Invalid time range in schedule payload\", msg); return null; }\n\nconst duration_hours = (endDate.getTime() - startDate.getTime()) / 3600000;\nmsg.report = {\n  generated_at: now.toISOString(),\n  window: { start_iso: startDate.toISOString(), end_iso: endDate.toISOString(), duration_hours }\n};\n\n// map MAC -> Room name จาก flow file\nconst deviceMap = flow.get('device_map', 'file') || {};\nconst macToRoomName = {};\nfor (const key in deviceMap) {\n  if (key.startsWith('room')) {\n    const mac = deviceMap[key];\n    const letter = key.slice(-1).toUpperCase();\n    macToRoomName[mac] = deviceMap[`name${letter}`] || `Room ${letter}`;\n  }\n}\nconst macs = Object.keys(macToRoomName);\nif (macs.length === 0) { node.warn(\"No devices configured in device_map for reporting.\"); return null; }\n\n// --- 1) สรุปข้อมูลห้อง (Sensor Data + Uptime) ---\nconst roomSummarySql = `\nWITH RoomData AS (\n  SELECT mac,\n         AVG(avg_temp) AS temp_avg, MIN(min_temp) AS temp_min, MAX(max_temp) AS temp_max,\n         AVG(avg_hum)  AS hum_avg,  MIN(min_hum)  AS hum_min,  MAX(max_hum)  AS hum_max\n  FROM dht_22\n  WHERE timestamp BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')})\n  GROUP BY mac\n), UptimeData AS (\n  SELECT mac, (SUM(CASE WHEN status='online' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS uptime_pct\n  FROM esp_status_log\n  WHERE time BETWEEN ? AND ? AND mac IN (${macs.map(() => '?').join(',')})\n  GROUP BY mac\n)\nSELECT r.mac, d.temp_avg, d.temp_min, d.temp_max, d.hum_avg, d.hum_min, d.hum_max, u.uptime_pct\nFROM (SELECT DISTINCT mac FROM dht_22 WHERE mac IN (${macs.map(() => '?').join(',')})) r\nLEFT JOIN RoomData d ON r.mac = d.mac\nLEFT JOIN UptimeData u ON r.mac = u.mac;\n`;\nconst roomParams = [start_sql, end_sql, ...macs, start_sql, end_sql, ...macs, ...macs];\n\n// ===== ตั้งค่าการรวมกลุ่มเหตุการณ์ =====\nconst MERGE_GAP_SEC = Number(flow.get(\"mergeGapSec\")) || 60;  // รวมเหตุการณ์ที่ห่างกันไม่เกิน 60s\nconst MIN_EVENT_SEC = Number(flow.get(\"minEventSec\")) || 1;   // ตัดเหตุการณ์ที่สั้นกว่า 1s ทิ้ง\n\n// --- 2) INCIDENTS: รวมจาก alert_event_log + alert_events แล้ว \"รวมกลุ่ม\" เหตุการณ์ที่ติดกัน ---\nconst eventsSql = `\nWITH\nparams AS (\n  SELECT CAST(? AS DATETIME) AS s, CAST(? AS DATETIME) AS e\n),\nraw AS (\n  /* รวม open/close ต่อ event_id เพื่อได้ opened_at/closed_at ที่แท้จริง */\n  SELECT\n    a.room_name,\n    l.mac,\n    l.sensor_name,\n    CASE\n      WHEN LOWER(l.metric) IN ('temp','temperature') THEN 'temp'\n      WHEN LOWER(l.metric) IN ('hum','humidity')     THEN 'hum'\n      ELSE 'connectivity'\n    END AS kind,\n    MIN(CASE WHEN l.action='open'  THEN l.ts END) AS opened_at,\n    MAX(CASE WHEN l.action='close' THEN l.ts END) AS closed_at,\n    MAX(l.level)  AS level,\n    MAX(l.value)  AS trigger_value\n  FROM alert_event_log l\n  JOIN alert_events a ON a.event_id = l.event_id\n  GROUP BY l.event_id, a.room_name, l.mac, l.sensor_name, kind\n),\ninter AS (\n  /* เอาเฉพาะเหตุการณ์ที่ซ้อนกับช่วงรายงาน */\n  SELECT r.*, p.s, p.e\n  FROM raw r, params p\n  WHERE r.opened_at < p.e AND (r.closed_at IS NULL OR r.closed_at > p.s)\n),\nseg AS (\n  /* ตัดขอบให้พอดีกับหน้าต่างรายงาน */\n  SELECT\n    room_name, mac, sensor_name, kind, level, trigger_value,\n    GREATEST(opened_at, s)           AS seg_start,\n    LEAST(COALESCE(closed_at, e), e) AS seg_end\n  FROM inter\n),\nmarked AS (\n  /* ทำเครื่องหมายขึ้นกลุ่มใหม่เมื่อห่างกันเกิน MERGE_GAP_SEC */\n  SELECT\n    *,\n    LAG(seg_end) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start) AS prev_end,\n    CASE\n      WHEN LAG(seg_end) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start) IS NULL\n        OR TIMESTAMPDIFF(SECOND, LAG(seg_end) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start), seg_start) > ${MERGE_GAP_SEC}\n      THEN 1 ELSE 0\n    END AS is_new_grp\n  FROM seg\n),\ngrp AS (\n  /* คำนวณ running group id */\n  SELECT\n    room_name, mac, sensor_name, kind, level, trigger_value, seg_start, seg_end,\n    SUM(is_new_grp) OVER (PARTITION BY room_name, sensor_name, kind ORDER BY seg_start\n      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS grp_id\n  FROM marked\n),\nmerged AS (\n  /* รวมเป็นเหตุการณ์เดียวต่อกลุ่ม */\n  SELECT\n    room_name,\n    sensor_name,\n    kind,\n    MAX(level) AS level,\n    MAX(trigger_value) AS trigger_value,\n    MIN(seg_start) AS grp_start,\n    MAX(seg_end)   AS grp_end,\n    TIMESTAMPDIFF(SECOND, MIN(seg_start), MAX(seg_end))  AS seconds_down,\n    TIMESTAMPDIFF(MINUTE, MIN(seg_start), MAX(seg_end))  AS minutes_down\n  FROM grp\n  GROUP BY room_name, sensor_name, kind, grp_id\n)\nSELECT\n  room_name,\n  sensor_name,\n  level,\n  TIME_FORMAT(grp_start, '%H:%i:%s') AS t_open,\n  CASE WHEN grp_end IS NULL THEN NULL ELSE TIME_FORMAT(grp_end, '%H:%i:%s') END AS t_close,\n  kind,\n  trigger_value,\n  minutes_down,\n  seconds_down\nFROM merged\nWHERE seconds_down >= ${MIN_EVENT_SEC}\nORDER BY grp_start ASC;\n`;\nconst eventsParams = [start_sql, end_sql];\n\n// ส่ง msg สองสายเหมือนเดิม\nreturn [\n  { topic: roomSummarySql, payload: roomParams, report: msg.report, _macToRoomName: macToRoomName, keyName: \"rooms\" },\n  { topic: eventsSql, payload: eventsParams, report: msg.report, keyName: \"events\" }\n];\n",
-        "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1740,
-        "y": 1500,
-        "wires": [
-            [
-                "6d49eebc87817fad"
-            ],
-            [
-                "66d954ac3dd73111"
-            ]
-        ]
-    },
-    {
-        "id": "6d49eebc87817fad",
-        "type": "mysql",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "mydb": "5e560f07cfec117a",
-        "name": "Query Room Summaries",
-        "x": 2010,
-        "y": 1480,
-        "wires": [
-            [
-                "065747965f653d21"
-            ]
-        ]
-    },
-    {
-        "id": "66d954ac3dd73111",
-        "type": "mysql",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "mydb": "5e560f07cfec117a",
-        "name": "Query Events",
-        "x": 1980,
-        "y": 1520,
-        "wires": [
-            [
-                "065747965f653d21"
-            ]
-        ]
-    },
-    {
-        "id": "dffe9683111bd2bf",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "Combine Results",
-        "func": "// msg.payload จะมี key rooms และ events\nconst roomSummaries = msg.payload.rooms || [];\nconst events = msg.payload.events || [];\nconst macToRoomName = msg.report._macToRoomName || {};\n\n// map ชื่อห้องในสรุปอุณหภูมิ/uptime\nmsg.report.rooms = roomSummaries.map(r => ({\n  ...r,\n  room: macToRoomName[r.mac] || r.mac\n}));\n\n// incidents จาก SQL ใหม่\nmsg.report.incidents = events.map(e => ({\n  room: e.room_name || '',\n  sensor: e.sensor_name || '',\n  kind: e.kind || 'other',          // connectivity | temp | hum\n  t_open: e.t_open || '--:--',\n  t_close: e.t_close || null,\n  minutes_down: (e.minutes_down != null ? Number(e.minutes_down) : null),\n  seconds_down: (e.seconds_down != null ? Number(e.seconds_down) : null),\n  level: e.level || null,\n  trigger_value: e.trigger_value\n}));\n\n// cleanup\ndelete msg.payload;\ndelete msg.topic;\ndelete msg._macToRoomName;\n\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 2450,
-        "y": 1500,
-        "wires": [
-            [
-                "37327e22131dff6d"
-            ]
-        ]
-    },
-    {
-        "id": "c1a2b3d4.e5f6g7",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "Set Daily Report Recipients",
-        "func": "// ดึงรายชื่ออีเมลจาก Flow Context ที่บันทึกไว้\nconst settings = flow.get('notificationSettings') || {};\nconst recipients = settings.recipients?.email || [];\n\n// ตรวจสอบว่ามีผู้รับหรือไม่\nif (!recipients || recipients.length === 0) {\n    node.warn(\"Daily Report: No email recipients configured.\");\n    return null; // หยุดการทำงานถ้าไม่มีอีเมล\n}\n\n// กำหนดผู้รับใน msg.to (คั่นด้วยคอมม่า)\nmsg.to = recipients.join(',');\n\n// ปล่อยผ่าน msg.topic และ msg.payload ที่มาจากโหนดก่อนหน้า\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 2040,
-        "y": 1580,
-        "wires": [
-            [
-                "d2e3f4a5.b6c7d8"
-            ]
-        ]
-    },
-    {
-        "id": "d2e3f4a5.b6c7d8",
-        "type": "e-mail",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "server": "smtp.gmail.com",
-        "port": "465",
-        "authtype": "BASIC",
-        "saslformat": false,
-        "token": "oauth2Response.access_token",
-        "secure": true,
-        "tls": false,
-        "name": "armtanayuts@gmail.com",
-        "dname": "Send Daily Report Email",
-        "x": 2290,
-        "y": 1580,
-        "wires": []
-    },
-    {
-        "id": "065747965f653d21",
-        "type": "join",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "Combine DB Results",
-        "mode": "custom",
-        "build": "object",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "keyName",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "accumulate": false,
-        "timeout": "",
-        "count": "2",
-        "reduceRight": false,
-        "reduceExp": "",
-        "reduceInit": "",
-        "reduceInitType": "num",
-        "reduceFixup": "",
-        "x": 2240,
-        "y": 1500,
-        "wires": [
-            [
-                "dffe9683111bd2bf"
-            ]
-        ]
-    },
-    {
-        "id": "37327e22131dff6d",
-        "type": "function",
-        "z": "640c6734fdac3595",
-        "g": "1af88c9d1185d6d0",
-        "name": "Format Thai Compact Report",
-        "func": "// --- รับข้อมูล ---\nconst reportData = msg.report || {};\nconst window = reportData.window || {};\nconst rooms = Array.isArray(reportData.rooms) ? reportData.rooms : [];\nconst incidents = Array.isArray(reportData.incidents) ? reportData.incidents : [];\n\n// --- Helpers ---\nfunction fmtNum(v, p = 1) { if (v === null || v === undefined || isNaN(v)) return '-'; return Number(v).toFixed(p); }\nfunction toThaiDateTime(iso) {\n  const d = new Date(iso);\n  const days = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\n  const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];\n  return `${days[d.getDay()]}ที่ ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543} เวลา ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} น.`;\n}\nfunction humanizeMinutesAndSeconds(mins, secs) {\n  const m = Number(mins), s = Number(secs);\n  if (!Number.isFinite(s) || s < 0) return '';\n  // ถ้ามากกว่าหรือเท่ากับ 60 วินาที ให้คง m เป็น Math.floor(s/60) ถ้า m ไม่ได้ส่งมาถูก\n  let totalS = s;\n  if (Number.isFinite(m) && m >= 0) totalS = m * 60 + (s % 60);\n  const d = Math.floor(totalS / 86400);\n  const h = Math.floor((totalS % 86400) / 3600);\n  const mm = Math.floor((totalS % 3600) / 60);\n  const ss = totalS % 60;\n  if (d > 0) return ` (${d} วัน ${h} ชม. ${mm} นาที${ss ? ` ${ss} วินาที` : ''})`;\n  if (h > 0) return ` (${h} ชม. ${mm} นาที${ss ? ` ${ss} วินาที` : ''})`;\n  if (mm > 0) return ` (${mm} นาที${ss ? ` ${ss} วินาที` : ''})`;\n  return ` (${ss} วินาที)`;\n}\n\n// ต้องมี room อย่างน้อย 1\nif (rooms.length === 0) { node.warn(\"No room data available to generate report.\"); return null; }\n\n// map MAC -> ชื่อห้อง\nconst deviceMap = flow.get('device_map') || {};\nconst macToName = {};\nfor (const key in deviceMap) {\n  if (key.startsWith('room')) {\n    const mac = deviceMap[key];\n    const letter = key.slice(-1).toUpperCase();\n    macToName[mac] = deviceMap[`name${letter}`] || `Server Room ${letter}`;\n  }\n}\n\nlet reportText = '';\nconst br = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';\n\n// ส่วนหัว\nreportText += '🏢 Server Room Daily Report\\n\\n';\nconst startTime = window.start_iso ? new Date(window.start_iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : 'N/A';\nconst endTime = window.end_iso ? new Date(window.end_iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : 'N/A';\nreportText += `📅 ${toThaiDateTime(reportData.generated_at)} (ข้อมูลช่วง ${startTime} - ${endTime})\\n`;\nreportText += `${br}\\n\\n`;\n\n// ห้อง\nrooms.forEach((r, idx) => {\n  const name = macToName[r.mac] || r.mac || `Room ${idx + 1}`;\n  const tempStatus = (r.temp_max > 26.5) ? '⚠️' : '✅';\n  const humStatus = (r.hum_max > 75) ? '⚠️' : '✅';\n  reportText += `📍 ${name}\\n`;\n  reportText += `   🌡️ อุณหภูมิ: เฉลี่ย ${fmtNum(r.temp_avg, 1)}°C (${fmtNum(r.temp_min, 1)}° - ${fmtNum(r.temp_max, 1)}°C) ${tempStatus}\\n`;\n  reportText += `   💧 ความชื้น: เฉลี่ย ${fmtNum(r.hum_avg, 1)}% (${fmtNum(r.hum_min, 1)}% - ${fmtNum(r.hum_max, 1)}%) ${humStatus}\\n`;\n  reportText += `   📡 สถานะ: Online ${fmtNum(r.uptime_pct, 1)}%\\n\\n`;\n});\nreportText += `${br}\\n`;\n\n// เหตุการณ์\nif (incidents.length > 0) {\n  reportText += `\\n⚠️ เหตุการณ์ที่ควรทราบ\\n`;\n  incidents.forEach(it => {\n    const room = it.room || '—';\n    const sensor = it.sensor ? ` ${it.sensor}` : '';\n    const durTxt = humanizeMinutesAndSeconds(it.minutes_down, it.seconds_down);\n\n    if (it.kind === 'connectivity') {\n      if (it.t_close) {\n        reportText += `- ${it.t_open} ${room}${sensor} ออฟไลน์ กลับมาออนไลน์เวลา ${it.t_close}${durTxt}\\n`;\n      } else {\n        reportText += `- ${it.t_open} ${room}${sensor} ออฟไลน์ต่อเนื่องยังไม่กลับมา${durTxt}\\n`;\n      }\n    } else if (it.kind === 'temp' || it.kind === 'hum') {\n      const label = it.kind === 'temp' ? 'อุณหภูมิ' : 'ความชื้น';\n      const val = (it.trigger_value != null) ? ` (${it.trigger_value})` : '';\n      if (it.t_close) {\n        reportText += `- ${it.t_open} ${room}${sensor} ${label} เกินเกณฑ์${val} กลับสู่ปกติเวลา ${it.t_close}${durTxt}\\n`;\n      } else {\n        reportText += `- ${it.t_open} ${room}${sensor} ${label} เกินเกณฑ์${val} ต่อเนื่องยังไม่กลับสู่ปกติ${durTxt}\\n`;\n      }\n    } else {\n      reportText += `- ${it.t_open} ${room}${sensor} เหตุการณ์: ${it.kind}${it.t_close ? ` ถึง ${it.t_close}` : ''}${durTxt}\\n`;\n    }\n  });\n  reportText += `\\n${br}\\n`;\n}\n\n// ท้าย\nconst genTime = new Date(reportData.generated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });\nreportText += `\\n🤖 Report สร้างโดยระบบอัตโนมัติ | ข้อมูลอัปเดต: ${genTime}\\n`;\n\nmsg.payload = reportText;\nconst reportDateForSubject = new Date(reportData.generated_at).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });\nmsg.topic = `📢Server Room Daily Report ประจำวันที่ ${reportDateForSubject}`;\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1780,
-        "y": 1580,
-        "wires": [
-            [
-                "c1a2b3d4.e5f6g7"
             ]
         ]
     },
@@ -4291,10 +4773,860 @@
         ]
     },
     {
-        "id": "2c25407253acdf41",
+        "id": "5a161bab6ea417fe",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "GET /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1740,
+        "y": 1520,
+        "wires": [
+            [
+                "cd2adcf7949bf9e1"
+            ]
+        ]
+    },
+    {
+        "id": "cd2adcf7949bf9e1",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "Load Notification Settings",
+        "func": "// ดึงข้อมูลที่บันทึกไว้ ถ้าไม่มี ให้สร้างข้อมูลเริ่มต้นใน \"โครงสร้างใหม่\" ที่ถูกต้อง\nconst settings = flow.get('notificationSettings') || {\n    recipients: {\n        email: [],\n        telegram: []\n    },\n    schedule: {\n        weekdays: [true, true, true, true, true, true, true],\n        configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n    }\n};\n\nmsg.payload = settings;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1990,
+        "y": 1520,
+        "wires": [
+            [
+                "7486317ab6c9b407"
+            ]
+        ]
+    },
+    {
+        "id": "7486317ab6c9b407",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 2180,
+        "y": 1520,
+        "wires": []
+    },
+    {
+        "id": "0d6a099dec5a745d",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "POST /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1740,
+        "y": 1560,
+        "wires": [
+            [
+                "835b9d24889b4401"
+            ]
+        ]
+    },
+    {
+        "id": "835b9d24889b4401",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "Validate & Set Defaults",
+        "func": "// msg.payload คือ JSON ที่ UI ส่งมา\nlet payload = msg.payload;\n\n// --- 1. ตรวจสอบ Recipients ---\nif (!payload.recipients) {\n    payload.recipients = { email: [], telegram: [] };\n}\nif (!Array.isArray(payload.recipients.email)) {\n    payload.recipients.email = [];\n}\nif (!Array.isArray(payload.recipients.telegram)) {\n    payload.recipients.telegram = [];\n}\n\n// --- 2. ตรวจสอบ Schedule (โครงสร้างใหม่) ---\nconst defaults = {\n    weekdays: [true, true, true, true, true, true, true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n};\n\nlet schedule = payload.schedule;\nlet isScheduleInvalid = true;\n\n// ตรวจสอบว่า schedule.configs เป็น Array ที่ถูกต้องหรือไม่\nif (schedule && Array.isArray(schedule.weekdays) && schedule.weekdays.length === 7 && Array.isArray(schedule.configs)) {\n    // ถ้าข้อมูลถูกต้อง (อาจจะเป็น Array ว่างก็ได้ ถ้าผู้ใช้ลบหมด)\n    isScheduleInvalid = false;\n}\n\n// ถ้าข้อมูลไม่ถูกต้อง ให้ใช้ค่า Default\nif (isScheduleInvalid) {\n    node.warn(\"Received empty or invalid schedule. Applying default settings.\");\n    payload.schedule = defaults;\n}\n\nmsg.payload = payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2000,
+        "y": 1560,
+        "wires": [
+            [
+                "037b2b044352cb94"
+            ]
+        ]
+    },
+    {
+        "id": "037b2b044352cb94",
+        "type": "change",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "Save to Flow Context",
+        "rules": [
+            {
+                "t": "set",
+                "p": "notificationSettings",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 2250,
+        "y": 1560,
+        "wires": [
+            [
+                "70048c0d3169c8aa",
+                "55426d0f63020db5"
+            ]
+        ]
+    },
+    {
+        "id": "70048c0d3169c8aa",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 2450,
+        "y": 1560,
+        "wires": []
+    },
+    {
+        "id": "7b56862680ba6de6",
+        "type": "comment",
+        "z": "640c6734fdac3595",
+        "g": "98e9e0e68d946c03",
+        "name": "สำหรับ Daily Report",
+        "info": "",
+        "x": 1710,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "55426d0f63020db5",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "g": "e1984132a490d2e9",
+        "name": "Update Cron Schedule",
+        "func": "// Update Cron Schedule (patched)\n// สร้าง/ลบ schedule ใน cronplus ให้ยิงตาม UI settings\nconst DEFAULT_SETTINGS = {\n  recipients: { email: [], telegram: [] },\n  schedule: {\n    weekdays: [true,true,true,true,true,true,true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n  }\n};\n\n// โหลดค่า config\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n  node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n  settings = DEFAULT_SETTINGS;\n  flow.set(\"notificationSettings\", settings);\n}\n\n// วันในสัปดาห์ (0=Sun..6=Sat)\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst selectedDOW = weekdays\n  .map((isOn, idx) => isOn ? idx : -1)\n  .filter(v => v !== -1);\n\n// เคลียร์งานเก่าก่อน\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ไม่มีวันหรือไม่มีตารางเวลา → ลบแล้วจบ\nif (selectedDOW.length === 0 || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n  node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n  return [[removeAllMsg], null];\n}\n\n// ทำ string DOW\nconst daysOfWeekStr = selectedDOW.join(',');\n\n// timeZone ที่จะใช้ทั้งใน node และในคำสั่ง\nconst TZ = \"Asia/Bangkok\";\n\n// สร้าง job ใหม่ตามแต่ละ config\nconst crypto = (s)=> {\n  // แฮชจิ๋วกันชื่อชน (ไม่ต้องเอาจริงจัง)\n  let h = 0; for (let i=0;i<s.length;i++) h = ((h<<5)-h) + s.charCodeAt(i) | 0;\n  return Math.abs(h).toString(36).slice(0,5);\n};\n\nconst addMsgs = settings.schedule.configs\n  .filter(cfg => cfg && typeof cfg.sendAt === \"string\" && cfg.sendAt.includes(\":\"))\n  .map((cfg) => {\n    const [hourStr, minuteStr] = cfg.sendAt.split(\":\").map(s => String(s).trim());\n    const hour = String(parseInt(hourStr, 10));\n    const minute = String(parseInt(minuteStr, 10));\n\n    // cron 6 ฟิลด์: sec min hour dom month dow\n    const expression = `0 ${minute} ${hour} * * ${daysOfWeekStr}`;\n\n    // ทำชื่อ job ให้คงที่แต่ไม่ชนกันง่าย\n    const sig = `${hour}:${minute}|${daysOfWeekStr}|${cfg.rangeStart||''}-${cfg.rangeEnd||''}`;\n    const name = `digest-${crypto(sig)}`;\n\n    return {\n      payload: {\n        command: \"add\",\n        name,\n        expressionType: \"cron\",\n        expression,\n        timeZone: TZ,\n        // payload ที่ปล่อยตอนถึงเวลา ให้พก cfg ออกไปด้วย\n        payload: {\n          kind: \"daily-digest-trigger\",\n          schedule: { ...cfg, daysOfWeekStr, timeZone: TZ }\n        },\n        payloadType: \"json\"\n      }\n    };\n  });\n\n// ส่งออก: output1 = remove-all, output2 = add ทั้งหมด\nreturn [[removeAllMsg], addMsgs];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1920,
+        "y": 1640,
+        "wires": [
+            [
+                "b06ddb5d8bc71c19"
+            ],
+            [
+                "b06ddb5d8bc71c19"
+            ]
+        ]
+    },
+    {
+        "id": "6506649cc536d2f8",
+        "type": "inject",
+        "z": "640c6734fdac3595",
+        "g": "e1984132a490d2e9",
+        "name": "On Deploy",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str",
+                "v": "load_schedule"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 1710,
+        "y": 1640,
+        "wires": [
+            [
+                "55426d0f63020db5"
+            ]
+        ]
+    },
+    {
+        "id": "b06ddb5d8bc71c19",
+        "type": "cronplus",
+        "z": "640c6734fdac3595",
+        "g": "e1984132a490d2e9",
+        "name": "Daily Digest Scheduler",
+        "outputField": "payload",
+        "timeZone": "Asia/Bangkok",
+        "storeName": "",
+        "commandResponseMsgOutput": "output2",
+        "defaultLocation": "",
+        "defaultLocationType": "default",
+        "outputs": 2,
+        "options": [],
+        "x": 2200,
+        "y": 1640,
+        "wires": [
+            [
+                "6b0b0398d197ace6"
+            ],
+            [
+                "6b0b0398d197ace6"
+            ]
+        ]
+    },
+    {
+        "id": "ebc659433b207557",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "GET /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1660,
+        "y": 3300,
+        "wires": [
+            [
+                "7823d711f1c7d90a"
+            ]
+        ]
+    },
+    {
+        "id": "7823d711f1c7d90a",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "Load Notification Settings",
+        "func": "// ดึงข้อมูลที่บันทึกไว้ ถ้าไม่มี ให้สร้างข้อมูลเริ่มต้นใน \"โครงสร้างใหม่\" ที่ถูกต้อง\nconst settings = flow.get('notificationSettings') || {\n    recipients: {\n        email: [],\n        telegram: []\n    },\n    schedule: {\n        weekdays: [true, true, true, true, true, true, true],\n        configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n    }\n};\n\nmsg.payload = settings;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1910,
+        "y": 3300,
+        "wires": [
+            [
+                "916fc029317d9013"
+            ]
+        ]
+    },
+    {
+        "id": "916fc029317d9013",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 2100,
+        "y": 3300,
+        "wires": []
+    },
+    {
+        "id": "00a783d5415baa0a",
+        "type": "http in",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "POST /api/notification-settings",
+        "url": "/api/notification-settings",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 1660,
+        "y": 3340,
+        "wires": [
+            [
+                "f9434f2fb6a8fe2a"
+            ]
+        ]
+    },
+    {
+        "id": "f9434f2fb6a8fe2a",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "Validate & Set Defaults",
+        "func": "// msg.payload คือ JSON ที่ UI ส่งมา\nlet payload = msg.payload;\n\n// --- 1. ตรวจสอบ Recipients ---\nif (!payload.recipients) {\n    payload.recipients = { email: [], telegram: [] };\n}\nif (!Array.isArray(payload.recipients.email)) {\n    payload.recipients.email = [];\n}\nif (!Array.isArray(payload.recipients.telegram)) {\n    payload.recipients.telegram = [];\n}\n\n// --- 2. ตรวจสอบ Schedule (โครงสร้างใหม่) ---\nconst defaults = {\n    weekdays: [true, true, true, true, true, true, true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n};\n\nlet schedule = payload.schedule;\nlet isScheduleInvalid = true;\n\n// ตรวจสอบว่า schedule.configs เป็น Array ที่ถูกต้องหรือไม่\nif (schedule && Array.isArray(schedule.weekdays) && schedule.weekdays.length === 7 && Array.isArray(schedule.configs)) {\n    // ถ้าข้อมูลถูกต้อง (อาจจะเป็น Array ว่างก็ได้ ถ้าผู้ใช้ลบหมด)\n    isScheduleInvalid = false;\n}\n\n// ถ้าข้อมูลไม่ถูกต้อง ให้ใช้ค่า Default\nif (isScheduleInvalid) {\n    node.warn(\"Received empty or invalid schedule. Applying default settings.\");\n    payload.schedule = defaults;\n}\n\nmsg.payload = payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1920,
+        "y": 3340,
+        "wires": [
+            [
+                "077a60bd5939261f"
+            ]
+        ]
+    },
+    {
+        "id": "077a60bd5939261f",
+        "type": "change",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "Save to Flow Context",
+        "rules": [
+            {
+                "t": "set",
+                "p": "notificationSettings",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 2170,
+        "y": 3340,
+        "wires": [
+            [
+                "a9a2a1f54adb707b",
+                "a23a95b84c3666c1"
+            ]
+        ]
+    },
+    {
+        "id": "a9a2a1f54adb707b",
+        "type": "http response",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 2370,
+        "y": 3340,
+        "wires": []
+    },
+    {
+        "id": "91bd6b074f720c83",
+        "type": "comment",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "84793865084e2dd9",
+        "name": "สำหรับ Daily Report",
+        "info": "",
+        "x": 1630,
+        "y": 3260,
+        "wires": []
+    },
+    {
+        "id": "a23a95b84c3666c1",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Update Cron Schedule",
+        "func": "// Update Cron Schedule (patched)\n// สร้าง/ลบ schedule ใน cronplus ให้ยิงตาม UI settings\nconst DEFAULT_SETTINGS = {\n  recipients: { email: [], telegram: [] },\n  schedule: {\n    weekdays: [true,true,true,true,true,true,true],\n    configs: [{ sendAt: \"08:00\", rangeStart: \"17:00\", rangeEnd: \"08:00\" }]\n  }\n};\n\n// โหลดค่า config\nlet settings = flow.get(\"notificationSettings\");\nif (!settings || !settings.schedule || !Array.isArray(settings.schedule.configs)) {\n  node.warn(\"Notification settings missing or invalid. Seeding defaults.\");\n  settings = DEFAULT_SETTINGS;\n  flow.set(\"notificationSettings\", settings);\n}\n\n// วันในสัปดาห์ (0=Sun..6=Sat)\nconst weekdays = Array.isArray(settings.schedule.weekdays) ? settings.schedule.weekdays : [];\nconst selectedDOW = weekdays\n  .map((isOn, idx) => isOn ? idx : -1)\n  .filter(v => v !== -1);\n\n// เคลียร์งานเก่าก่อน\nconst removeAllMsg = { payload: { command: \"remove-all\" } };\n\n// ไม่มีวันหรือไม่มีตารางเวลา → ลบแล้วจบ\nif (selectedDOW.length === 0 || !Array.isArray(settings.schedule.configs) || settings.schedule.configs.length === 0) {\n  node.warn(\"No days or schedules selected. Removing all cron jobs.\");\n  return [[removeAllMsg], null];\n}\n\n// ทำ string DOW\nconst daysOfWeekStr = selectedDOW.join(',');\n\n// timeZone ที่จะใช้ทั้งใน node และในคำสั่ง\nconst TZ = \"Asia/Bangkok\";\n\n// สร้าง job ใหม่ตามแต่ละ config\nconst crypto = (s)=> {\n  // แฮชจิ๋วกันชื่อชน (ไม่ต้องเอาจริงจัง)\n  let h = 0; for (let i=0;i<s.length;i++) h = ((h<<5)-h) + s.charCodeAt(i) | 0;\n  return Math.abs(h).toString(36).slice(0,5);\n};\n\nconst addMsgs = settings.schedule.configs\n  .filter(cfg => cfg && typeof cfg.sendAt === \"string\" && cfg.sendAt.includes(\":\"))\n  .map((cfg) => {\n    const [hourStr, minuteStr] = cfg.sendAt.split(\":\").map(s => String(s).trim());\n    const hour = String(parseInt(hourStr, 10));\n    const minute = String(parseInt(minuteStr, 10));\n\n    // cron 6 ฟิลด์: sec min hour dom month dow\n    const expression = `0 ${minute} ${hour} * * ${daysOfWeekStr}`;\n\n    // ทำชื่อ job ให้คงที่แต่ไม่ชนกันง่าย\n    const sig = `${hour}:${minute}|${daysOfWeekStr}|${cfg.rangeStart||''}-${cfg.rangeEnd||''}`;\n    const name = `digest-${crypto(sig)}`;\n\n    return {\n      payload: {\n        command: \"add\",\n        name,\n        expressionType: \"cron\",\n        expression,\n        timeZone: TZ,\n        // payload ที่ปล่อยตอนถึงเวลา ให้พก cfg ออกไปด้วย\n        payload: {\n          kind: \"daily-digest-trigger\",\n          schedule: { ...cfg, daysOfWeekStr, timeZone: TZ }\n        },\n        payloadType: \"json\"\n      }\n    };\n  });\n\n// ส่งออก: output1 = remove-all, output2 = add ทั้งหมด\nreturn [[removeAllMsg], addMsgs];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1840,
+        "y": 3420,
+        "wires": [
+            [
+                "08c490b093196c3c"
+            ],
+            [
+                "08c490b093196c3c"
+            ]
+        ]
+    },
+    {
+        "id": "0bf363b53e66a04f",
+        "type": "inject",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "On Deploy",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str",
+                "v": "load_schedule"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 1630,
+        "y": 3420,
+        "wires": [
+            [
+                "a23a95b84c3666c1"
+            ]
+        ]
+    },
+    {
+        "id": "08c490b093196c3c",
+        "type": "cronplus",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Daily Digest Scheduler",
+        "outputField": "payload",
+        "timeZone": "Asia/Bangkok",
+        "storeName": "",
+        "commandResponseMsgOutput": "output2",
+        "defaultLocation": "",
+        "defaultLocationType": "default",
+        "outputs": 2,
+        "options": [],
+        "x": 2120,
+        "y": 3420,
+        "wires": [
+            [
+                "c5e977884cbb9ede"
+            ],
+            [
+                "c5e977884cbb9ede"
+            ]
+        ]
+    },
+    {
+        "id": "c5e977884cbb9ede",
+        "type": "http request",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "GET /api/notification-settings",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:1880/api/notification-settings",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1700,
+        "y": 3480,
+        "wires": [
+            [
+                "67f0585dc08c884e"
+            ]
+        ]
+    },
+    {
+        "id": "67f0585dc08c884e",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Check Schedule & Resolve Window",
+        "func": "// ดึง dayjs ที่ตั้งค่าเรียบร้อยแล้วจาก global context\nconst dayjs = global.get('dayjs');\n\nif (!dayjs) {\n    node.error(\"Day.js is not loaded into global context. Please check settings.js and restart Node-RED.\", msg);\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Day.js not loaded!\" });\n    return null;\n}\n\nconst tz = 'Asia/Bangkok';\nconst now = dayjs().tz(tz);\n\nconst settings = msg.payload;\n\n// --- ส่วนที่เหลือของโค้ดเหมือนเดิม ---\n\nmsg.recipients = settings.recipients;\n\nif (!settings.schedule || !settings.schedule.configs) {\n    node.warn(\"Schedule config is missing or invalid.\");\n    return null;\n}\n\nconst todayWeekday = now.day();\nconst activeConfigs = settings.schedule.configs.filter(c => {\n    const isActive = c.active === undefined ? true : c.active;\n    return isActive && settings.schedule.weekdays[todayWeekday];\n});\n\nif (activeConfigs.length === 0) {\n    node.status({ fill: \"grey\", shape: \"ring\", text: \"No active schedule today\" });\n    return null;\n}\n\nconst config = activeConfigs[0];\n\nfunction toToday(hm) {\n    const [H, M] = hm.split(':').map(Number);\n    return dayjs().tz(tz).hour(H).minute(M).second(0).millisecond(0);\n}\n\nconst S = toToday(config.rangeStart);\nconst E = toToday(config.rangeEnd);\nconst T = toToday(config.sendAt);\n\nconst timeDiff = now.diff(T, 'minute');\nif (timeDiff < 0 || timeDiff > 0) {\n    node.status({ fill: \"blue\", shape: \"ring\", text: `Waiting for ${T.format('HH:mm')}` });\n    return null;\n}\n\nlet startTs, endTs;\nif (config.rangeStart === config.rangeEnd) {\n    endTs = E;\n    if (T.isBefore(E)) {\n        endTs = endTs.subtract(1, 'day');\n    }\n    startTs = endTs.subtract(24, 'hour');\n} else {\n    endTs = E;\n    let startCandidate = S;\n    if (E.isBefore(S)) {\n        startCandidate = S.subtract(1, 'day');\n    }\n    if (T.isBefore(E)){\n        endTs = endTs.subtract(1, 'day');\n        startCandidate = startCandidate.subtract(1, 'day');\n    }\n    startTs = startCandidate;\n}\n\nmsg.window = {\n    start: startTs.format('YYYY-MM-DD HH:mm:ss'),\n    end: endTs.format('YYYY-MM-DD HH:mm:ss'),\n    startISO: startTs.toISOString(),\n    endISO: endTs.toISOString(),\n    displayRange: `${config.rangeStart}–${config.rangeEnd}`,\n    reportDate: endTs.format('DD/MM/YYYY')\n};\n\nmsg.attachmentName = `daily_report_${endTs.format('DDMMYYYY')}.csv`;\nnode.status({ fill: \"green\", shape: \"dot\", text: `Triggering report for ${msg.window.displayRange}` });\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1820,
+        "y": 3540,
+        "wires": [
+            [
+                "72dad8984c3c3ec1",
+                "ec48ad5158e878f8"
+            ]
+        ]
+    },
+    {
+        "id": "72dad8984c3c3ec1",
+        "type": "http request",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "GET /api/device-map",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:1880/api/device-map",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 2110,
+        "y": 3540,
+        "wires": [
+            [
+                "ecaa38d86995e353",
+                "33e299b4862f41f8"
+            ]
+        ]
+    },
+    {
+        "id": "ec48ad5158e878f8",
+        "type": "http request",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "GET /api/pin-map",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:1880/api/pin-map",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 2100,
+        "y": 3600,
+        "wires": [
+            [
+                "ecaa38d86995e353",
+                "33e299b4862f41f8"
+            ]
+        ]
+    },
+    {
+        "id": "ecaa38d86995e353",
+        "type": "join",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Join Maps",
+        "mode": "custom",
+        "build": "merged",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "2",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 2280,
+        "y": 3570,
+        "wires": [
+            [
+                "8869744351249d15",
+                "33e299b4862f41f8"
+            ]
+        ]
+    },
+    {
+        "id": "8869744351249d15",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Build Mappers",
+        "func": "// Build Mappers (robust to join shape + blanks)\n\n// 1) รับ payload จาก Join (object ตาม topic)\nlet deviceMap = msg.payload && msg.payload.deviceMap;\nlet pinMap    = msg.payload && msg.payload.pinMap;\n\n// fallback: ถ้าใครยังดันทุรังส่งมาเป็น array อยู่\nif ((!deviceMap || !pinMap) && Array.isArray(msg.payload)) {\n    // พยายามเดา: อันที่มี key roomA/nameA คือ deviceMap\n    const a = msg.payload[0], b = msg.payload[1];\n    const looksDevice = (o) => o && typeof o === 'object' &&\n        Object.keys(o).some(k => /^room[A-G]$/.test(k) || /^name[A-G]$/.test(k));\n    if (looksDevice(a)) { deviceMap = a; pinMap = b; }\n    else if (looksDevice(b)) { deviceMap = b; pinMap = a; }\n}\n\n// ตรวจสอบขั้นสุดท้าย\nif (!deviceMap || typeof deviceMap !== 'object') {\n    node.error(\"Device map is missing or not an object.\", { payload: msg.payload });\n    node.status({fill:\"red\", shape:\"ring\", text:\"Invalid device map\"});\n    return null;\n}\nif (!pinMap || typeof pinMap !== 'object') {\n    node.error(\"Pin map is missing or not an object.\", { payload: msg.payload });\n    node.status({fill:\"red\", shape:\"ring\", text:\"Invalid pin map\"});\n    return null;\n}\n\n// 2) สร้าง mapping: ข้ามค่าที่ว่าง (\"\")\nfunction buildMacToRoom(map) {\n    const out = {};\n    const letters = ['A','B','C','D','E','F','G'];\n    for (const L of letters) {\n        const mac  = (map[`room${L}`] || \"\").trim();\n        const name = (map[`name${L}`] || \"\").trim();\n        if (mac && name) out[mac] = name;\n    }\n    return out;\n}\n\n// ถ้าชื่อ sensor ไม่เจอ ให้ fallback เป็น 'PIN xx'\nfunction sensorName(mac, pin) {\n    const byMac = pinMap[mac] || {};\n    const n = byMac[pin];\n    return n && String(n).trim() ? n : `PIN ${pin}`;\n}\n\nmsg.macToRoom  = buildMacToRoom(deviceMap);\nmsg.roomToMac  = Object.fromEntries(Object.entries(msg.macToRoom).map(([mac,room]) => [room,mac]));\nmsg.allMacs    = Object.keys(msg.macToRoom);\nmsg.sensorName = (mac, pin) => sensorName(mac, pin);\n\n// ช่วย debug บน status\nnode.status({ fill: \"green\", shape: \"dot\", text: `Mapped ${msg.allMacs.length} rooms` });\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2450,
+        "y": 3570,
+        "wires": [
+            [
+                "b42a48065c40f13e",
+                "6399c2076c3de2ad",
+                "747e473d0659ed0c",
+                "0cb39f1c280edd91"
+            ]
+        ]
+    },
+    {
+        "id": "b42a48065c40f13e",
+        "type": "mysql",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Fetch Rules",
+        "x": 1730,
+        "y": 3660,
+        "wires": [
+            [
+                "1598d1930c6a3129"
+            ]
+        ]
+    },
+    {
+        "id": "6399c2076c3de2ad",
+        "type": "mysql",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Fetch Events",
+        "x": 1730,
+        "y": 3720,
+        "wires": [
+            [
+                "1598d1930c6a3129"
+            ]
+        ]
+    },
+    {
+        "id": "747e473d0659ed0c",
+        "type": "mysql",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Compute Stats",
+        "x": 1740,
+        "y": 3780,
+        "wires": [
+            [
+                "1598d1930c6a3129"
+            ]
+        ]
+    },
+    {
+        "id": "0cb39f1c280edd91",
+        "type": "mysql",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "mydb": "5e560f07cfec117a",
+        "name": "MySQL: Get Min/Max Times",
+        "x": 1760,
+        "y": 3840,
+        "wires": [
+            [
+                "1598d1930c6a3129"
+            ]
+        ]
+    },
+    {
+        "id": "1598d1930c6a3129",
+        "type": "join",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Join All Data",
+        "mode": "custom",
+        "build": "merged",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "4",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 2010,
+        "y": 3750,
+        "wires": [
+            [
+                "247cdec8f20e2910"
+            ]
+        ]
+    },
+    {
+        "id": "247cdec8f20e2910",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Process & Structure Data",
+        "func": "const { rules, events, stats, statTimes } = msg.payload;\n\n// 1. Build acceptable ranges from rules\nfunction buildRanges(rules) {\n    const out = { room: {}, sensor: {} };\n    for (const r of rules) {\n        const rng = {\n            warn: { min: r.warn_min, max: r.warn_max },\n            crit: { min: r.crit_min, max: r.crit_max }\n        };\n        if (r.scope === 'room' && r.sensor_name === 'overall') {\n            out.room[r.metric] = rng;\n        } else if (r.scope === 'sensor') {\n            out.sensor[`${r.mac}|${r.sensor_name}|${r.metric}`] = rng;\n        }\n    }\n    return out;\n}\nmsg.accept = buildRanges(rules);\n\n// 2. Status judging function\nfunction judge(value, rng) {\n    if (value === null || !rng) return 'unknown';\n    const w = rng.warn; const c = rng.crit;\n    if (c && ((c.min !== null && value < c.min) || (c.max !== null && value > c.max))) return 'critical';\n    if (w && ((w.min !== null && value < w.min) || (w.max !== null && value > w.max))) return 'warning';\n    return 'ok';\n}\n\n// 3. EMOJI helper\nconst statusToEmoji = {\n    'ok': '✅',\n    'warning': '⚠️',\n    'critical': '❌',\n    'unknown': '❓'\n};\n\n// 4. Group data by room\nmsg.rooms = [];\nfor (const mac of msg.allMacs) {\n    const roomName = msg.macToRoom[mac];\n    const roomData = {\n        name: roomName,\n        mac: mac,\n        overall: {},\n        sensors: [],\n        alerts: []\n    };\n\n    // Overall stats\n    const overallStat = stats.find(s => s.mac === mac && s.pin === 'OVERALL') || {};\n    const overallTimes = statTimes.find(s => s.mac === mac && s.pin === 'OVERALL') || {};\n    roomData.overall = { ...overallStat, ...overallTimes };\n    \n    // Sensor stats\n    const sensorStats = stats.filter(s => s.mac === mac && s.pin !== 'OVERALL');\n    for (const ss of sensorStats) {\n        const sensorName = msg.sensorName(mac, ss.pin);\n        const sensorTimes = statTimes.find(s => s.mac === mac && s.pin === ss.pin) || {};\n        const tempRule = msg.accept.sensor[`${mac}|${sensorName}|temp`];\n        const humRule = msg.accept.sensor[`${mac}|${sensorName}|hum`];\n        \n        const temp_status = judge(ss.avg_temp, tempRule);\n        const hum_status = judge(ss.avg_hum, humRule);\n        \n        roomData.sensors.push({\n            ...ss,\n            ...sensorTimes,\n            name: sensorName,\n            temp_status: temp_status,\n            hum_status: hum_status,\n            temp_status_emoji: statusToEmoji[temp_status],\n            hum_status_emoji: statusToEmoji[hum_status]\n        });\n    }\n    \n    // Overall Status\n    const overallTempRule = msg.accept.room.temp;\n    const overallHumRule = msg.accept.room.hum;\n    const overall_temp_status = judge(roomData.overall.avg_temp, overallTempRule);\n    const overall_hum_status = judge(roomData.overall.avg_hum, overallHumRule);\n    roomData.overall.temp_status = overall_temp_status;\n    roomData.overall.hum_status = overall_hum_status;\n    roomData.overall.temp_status_emoji = statusToEmoji[overall_temp_status];\n    roomData.overall.hum_status_emoji = statusToEmoji[overall_hum_status];\n    \n    // Alerts\n    roomData.alerts = events.filter(e => e.mac === mac).map(e => {\n        const a = {...e};\n        a.metric_desc = e.metric === 'temp' ? 'อุณหภูมิ' : 'ความชื้น';\n        a.unit = e.metric === 'temp' ? '°C' : '%';\n        a.time = new Date(a.opened_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });\n        return a;\n    });\n    \n    msg.rooms.push(roomData);\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 2240,
+        "y": 3750,
+        "wires": [
+            [
+                "cbc06f55fddabebe"
+            ]
+        ]
+    },
+    {
+        "id": "cbc06f55fddabebe",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Compose Email Body",
+        "func": "function fmtNum(n, unit = '') { if (n == null) return 'N/A'; return unit ? `${n.toFixed(1)}${unit}` : n.toFixed(1); }\nfunction fmtTime(t) { if (!t) return '—'; const d = new Date(t); return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }); }\n\nfunction getSummaryLine(room) {\n    const criticalAlerts = room.alerts.filter(a => a.level === 'critical');\n    if (criticalAlerts.length > 0) {\n        return `❌ วิกฤติ: ${criticalAlerts[0].sensor_name} ${criticalAlerts[0].metric_desc} ผิดปกติ`;\n    }\n    const warningAlerts = room.alerts.filter(a => a.level === 'warning');\n    if (warningAlerts.length > 0) {\n        return `⚠️ เฝ้าระวัง: ${warningAlerts[0].sensor_name} ${warningAlerts[0].metric_desc} ผิดปกติ`;\n    }\n    if (room.overall.temp_status === 'critical' || room.overall.hum_status === 'critical') return '❌ สถานะโดยรวมวิกฤติ';\n    if (room.overall.temp_status === 'warning' || room.overall.hum_status === 'warning') return '⚠️ สถานะโดยรวมต้องเฝ้าระวัง';\n    return '✅ ปกติทั้งหมด';\n}\n\nfunction roomSection(r, accept) {\n    const lines = [];\n    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');\n    lines.push(`สถานะห้อง ${r.name}`);\n    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');\n    lines.push(`🌡️ อุณหภูมิโดยรวม: ${fmtNum(r.overall.avg_temp, '°C')} ${r.overall.temp_status_emoji}`);\n    lines.push(`  • เฉลี่ย: ${fmtNum(r.overall.avg_temp, '°C')}`);\n    lines.push(`  • สูงสุด: ${fmtNum(r.overall.max_temp, '°C')} เวลา ${fmtTime(r.overall.time_max_temp)}`);\n    lines.push(`  • ต่ำสุด: ${fmtNum(r.overall.min_temp, '°C')} เวลา ${fmtTime(r.overall.time_min_temp)}`);\n    if (accept.room.temp?.warn) {\n        lines.push(`  • ช่วงที่เหมาะสม: ${accept.room.temp.warn.min}–${accept.room.temp.warn.max}°C`);\n    }\n    lines.push('');\n    lines.push(`💧 ความชื้นโดยรวม: ${fmtNum(r.overall.avg_hum, '%')} ${r.overall.hum_status_emoji}`);\n    lines.push(`  • เฉลี่ย: ${fmtNum(r.overall.avg_hum, '%')}`);\n    lines.push(`  • สูงสุด: ${fmtNum(r.overall.max_hum, '%')} เวลา ${fmtTime(r.overall.time_max_hum)}`);\n    lines.push(`  • ต่ำสุด: ${fmtNum(r.overall.min_hum, '%')} เวลา ${fmtTime(r.overall.time_min_hum)}`);\n    if (accept.room.hum?.warn) {\n        lines.push(`  • ช่วงที่เหมาะสม (Warning): ${accept.room.hum.warn.min}–${accept.room.hum.warn.max}%`);\n    }\n    lines.push('');\n    lines.push('📍 รายละเอียดเซ็นเซอร์:');\n    for (const s of r.sensors) {\n        lines.push(`- ${s.name} (Pin ${s.pin})`);\n        lines.push(`  🌡️ Temp: ${fmtNum(s.avg_temp, '°C')} (${fmtNum(s.min_temp)}–${fmtNum(s.max_temp)}) ${s.temp_status_emoji}`);\n        lines.push(`  💧 Hum: ${fmtNum(s.avg_hum, '%')} (${fmtNum(s.min_hum)}–${fmtNum(s.max_hum)}) ${s.hum_status_emoji}`);\n    }\n    lines.push('');\n    lines.push('🚨 Alert Log:');\n    if (!r.alerts.length) lines.push('- ไม่มีเหตุผิดปกติในช่วงนี้');\n    for (const a of r.alerts) {\n        const em = a.level === 'critical' ? '❌' : '⚠️';\n        const rule = accept.sensor[`${a.mac}|${a.sensor_name}|${a.metric}`] || accept.room[a.metric];\n        const rng = rule?.warn ? `, ช่วงที่เหมาะสม ${rule.warn.min}–${rule.warn.max}${a.unit}` : '';\n        lines.push(`- ${a.time} — ${a.sensor_name} ${a.metric_desc} ผิดปกติ ${fmtNum(a.trigger_value, a.unit)} (${em}${rng})`);\n    }\n    return lines.join('\\n');\n}\n\nconst generatedAt = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok' });\n\nconst lines = [];\nlines.push(`ช่วงเวลาตรวจสอบ: ${msg.window.displayRange}`);\nlines.push('');\nlines.push('📌 สรุปสถานะ');\nfor (const r of msg.rooms) {\n    lines.push(`- ${r.name}: ${getSummaryLine(r)}`);\n}\nlines.push('');\nfor (const r of msg.rooms) {\n    lines.push(roomSection(r, msg.accept));\n    lines.push('');\n}\nlines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');\nlines.push('📊 รายงานข้อมูลแบบละเอียด (CSV)');\nlines.push(`ไฟล์แนบ: ${msg.attachmentName}`);\nlines.push('');\nlines.push('═══════════════════════════════════');\nlines.push(`📧 รายงานนี้ถูกสร้างโดยระบบอัตโนมัติ เวลา ${generatedAt}`);\nlines.push('═══════════════════════════════════');\n\nmsg.payload = lines.join('\\n'); // for email body\nmsg.topic = `[📢 Daily Report] ประจำวันที่ ${msg.window.reportDate} (${msg.window.displayRange})`; // for email subject\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 2480,
+        "y": 3750,
+        "wires": [
+            [
+                "3cf86c54e499f185"
+            ]
+        ]
+    },
+    {
+        "id": "1284b53d86ca0e5d",
+        "type": "http request",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "GET /api/export CSV",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": "query",
+        "url": "http://localhost:1880/api/export",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1730,
+        "y": 3920,
+        "wires": [
+            [
+                "2e88d5c10846da07"
+            ]
+        ]
+    },
+    {
+        "id": "2e88d5c10846da07",
+        "type": "function",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Prepare Attachment",
+        "func": "// msg.payload ตอนนี้คือข้อมูล CSV จาก http request\n// msg.emailTextBody คือเนื้อหาอีเมลที่เก็บไว้ก่อนหน้า\n\nmsg.attachments = [\n    {\n        \"filename\": msg.attachmentName,\n        \"content\": msg.payload, // ข้อมูล CSV\n        \"contentType\": \"text/csv\"\n    }\n];\n\n// นำเนื้อหาอีเมลกลับมาใส่ใน payload เพื่อส่งอีเมล\nmsg.payload = msg.emailTextBody;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1950,
+        "y": 3920,
+        "wires": [
+            [
+                "ab9735b1f67a9747"
+            ]
+        ]
+    },
+    {
+        "id": "ab9735b1f67a9747",
+        "type": "e-mail",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "server": "smtp.gmail.com",
+        "port": "465",
+        "authtype": "BASIC",
+        "saslformat": false,
+        "token": "oauth2Response.access_token",
+        "secure": true,
+        "tls": true,
+        "name": "armtanayuts@gmail.com",
+        "dname": "Send Email",
+        "x": 2150,
+        "y": 3920,
+        "wires": []
+    },
+    {
+        "id": "3cf86c54e499f185",
+        "type": "change",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "Store Email Body",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "emailTextBody",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 2210,
+        "y": 3820,
+        "wires": [
+            [
+                "1284b53d86ca0e5d"
+            ]
+        ]
+    },
+    {
+        "id": "33e299b4862f41f8",
         "type": "debug",
         "z": "640c6734fdac3595",
-        "name": "debug 1",
+        "d": true,
+        "g": "f8a493ff7cd6611c",
+        "name": "debug 2",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -4302,8 +5634,29 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2660,
-        "y": 360,
+        "x": 1580,
+        "y": 3580,
+        "wires": []
+    },
+    {
+        "id": "cfec141fb9e24254",
+        "type": "comment",
+        "z": "640c6734fdac3595",
+        "name": "butk dfvr sqmi tbsf",
+        "info": "",
+        "x": 2470,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "6b0b0398d197ace6",
+        "type": "subflow:6d5ddc6b8286095b",
+        "z": "640c6734fdac3595",
+        "d": true,
+        "g": "e1984132a490d2e9",
+        "name": "",
+        "x": 2430,
+        "y": 1660,
         "wires": []
     },
     {
@@ -4337,7 +5690,7 @@
         ]
     },
     {
-        "id": "91caa0124755236c",
+        "id": "01e6798c16ebbf6c",
         "type": "debug",
         "z": "640c6734fdac3595",
         "name": "GET /api/export",
@@ -4349,12 +5702,12 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 3060,
-        "y": 1480,
+        "x": 3020,
+        "y": 1520,
         "wires": []
     },
     {
-        "id": "e7411741075bca07",
+        "id": "848c0a14f3f98191",
         "type": "debug",
         "z": "640c6734fdac3595",
         "name": "1. Prepare Info & Sensor Query",
@@ -4366,76 +5719,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 3410,
-        "y": 1480,
-        "wires": []
-    },
-    {
-        "id": "31dfd1d1a484a46f",
-        "type": "debug",
-        "z": "640c6734fdac3595",
-        "name": "2. Prepare Alert Query",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 3628.5078125,
-        "y": 1560.5078125,
-        "wires": []
-    },
-    {
-        "id": "de4b14857ed56b43",
-        "type": "debug",
-        "z": "640c6734fdac3595",
-        "name": "3. Prepare Data",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 3100,
-        "y": 1620,
-        "wires": []
-    },
-    {
-        "id": "8e7c5761295f4dca",
-        "type": "debug",
-        "z": "640c6734fdac3595",
-        "name": "4a. Create CSV String",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 3420,
-        "y": 1640,
-        "wires": []
-    },
-    {
-        "id": "e49915b2a7082f86",
-        "type": "debug",
-        "z": "640c6734fdac3595",
-        "name": "5. Set Final Headers",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 3780,
-        "y": 1660,
+        "x": 3330,
+        "y": 1520,
         "wires": []
     },
     {
