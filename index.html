@@ -1811,7 +1811,7 @@
             flex-direction: column;
             gap: 1rem;
             padding: 1.5rem;
-            animation: fadeInScale 0.2s ease-out forwards;
+            animation: none;
         }
 
         @keyframes fadeInScale {
@@ -1869,19 +1869,6 @@
             transition: opacity 0.05s ease-out;
         }
 
-        #modal-reboot>div,
-        #modal-export>div,
-        #modal-device-map>div,
-        #modal-pin-map>div,
-        #modal-recipients>div,
-        #modal-ack .config-panel,
-        #modal-settings .config-panel,
-        #modal-room-detail .config-panel,
-        #modal-alert-center .alert-center-panel,
-        #modal-sensor-rules .config-panel {
-            transition: transform 0.05s ease-out, opacity 0.05s ease-out;
-        }
-
         .modal-initial-state,
         .modal-is-exiting>div,
         .modal-is-exiting .config-panel,
@@ -1910,14 +1897,14 @@
         }
 
         .modal-is-entering {
-            opacity: 0;
+            opacity: 1;
         }
 
         .modal-is-entering>div,
         .modal-is-entering .config-panel,
         .modal-is-entering .alert-center-panel {
-            opacity: 0;
-            transform: scale(0.95) translateY(10px);
+            opacity: 1;
+            transform: none;
         }
 
         .modal-is-exiting {
@@ -1928,7 +1915,7 @@
         .modal-is-exiting .config-panel,
         .modal-is-exiting .alert-center-panel {
             opacity: 0;
-            transform: scale(0.95) translateY(10px);
+            transform: none;
         }
 
         .settings-locked .config-body fieldset,
